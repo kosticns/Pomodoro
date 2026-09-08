@@ -1,0 +1,248 @@
+// Suggested break activities, shown on the Breaks panel and during breaks.
+
+export const BREAK_ACTIVITIES = [
+  // Mind & Focus
+  "Do 10 mindful breaths to reset your focus like a system reboot.",
+  "Write down one idea that could make tomorrow 1% better.",
+  "Close your eyes and visualize your top goal already achieved.",
+  "Do a quick body scan and release hidden tension.",
+  "Note one distraction to eliminate in your next work block.",
+  "Blink rapidly for 20 seconds to refresh your eyes.",
+  'Write a micro-affirmation: "I am becoming ___ each day."',
+  "Doodle freely — spark your creative neural circuits.",
+  "Do a 30-second gratitude list, futuristic style: \"I'm thankful for what's coming.\"",
+  "Reset posture — sit like your future self would.",
+
+  // Body & Health
+  "Stretch your body as if charging your muscles for the next round.",
+  "Roll your shoulders forward and backward 10 times.",
+  'Do a 5-minute walk to signal your brain: "break = renewal."',
+  "Sip water like you're fueling high-tech machinery.",
+  "Stand up and shake out your arms and legs — energy reboot.",
+  "Do 10 squats — build micro strength daily.",
+  "Hold a plank for 30–60 seconds — engage your core systems.",
+  "Stretch your neck gently side to side — debug stiffness.",
+  "Do wrist circles — protect your future typing speed.",
+  "Take three deep belly breaths, exhale stress like outdated code.",
+
+  // Learning & Growth
+  "Open a saved article and skim one key insight.",
+  "Watch 2 minutes of a TED Talk — seed future ideas.",
+  "Translate one random word into another language.",
+  "Learn one fun fact you didn't know yesterday.",
+  "Open your notes and refine one sentence for clarity.",
+  "Read one page of a book — micro-compound knowledge.",
+  'Write down a "future skill" you want to master.',
+  "Ask ChatGPT one curious question you've been avoiding.",
+  "Revisit a note from last week and highlight one takeaway.",
+  'Pick one "unknown unknown" and Google it.',
+
+  // Routine & Systems
+  "Organize one folder or file — digital hygiene.",
+  "Delete 5 old emails — clear space for the future.",
+  "Update your to-do list with one realistic win.",
+  'Move one task into "automate / delegate" mode.',
+  "Clean your desktop — future you thanks you.",
+  "Re-order priorities for next block — agile in action.",
+  "Back up one important file — resilience mode.",
+  "Close one unused browser tab — declutter your head.",
+  "Rename a messy file — practice future clarity.",
+  "Check if one recurring task could be systemized.",
+
+  // Self & Reflection
+  "Write down one thing you're proud of today.",
+  "Send a thank-you message to someone right now.",
+  'Ask yourself: "Is what I\'m doing aligned with future me?"',
+  "Capture one idea in your journal before it evaporates.",
+  "Identify one habit to strengthen this week.",
+  'Reflect: "What\'s one thing I should stop doing?"',
+  "Write your future self a one-line note.",
+  "Think about one person you could learn from.",
+  "Recall the last small win — relive it.",
+  'Define your "one word" for the next 2 hours.',
+
+  // Energy & Quick Hacks
+  "Do 10 jumping jacks — shock the system awake.",
+  "Splash cold water on your face — instant refresh.",
+  "Put on a favorite song snippet — micro-motivation.",
+  "Step outside, get sunlight — charge like solar tech.",
+  "Walk barefoot on the floor — grounding hack.",
+  "Inhale deeply through nose, exhale twice as long.",
+  "Try a 1-minute power nap (just close eyes).",
+  "Do fingertip pushups — future keyboard warrior.",
+  "Wash your hands mindfully — reset signal.",
+  'Chew gum — trick brain into "refresh cycle."',
+
+  // Futuristic & Growth-Oriented Mindset
+  "Imagine AI handling your future routine — what's left for you?",
+  "Visualize your future workspace — cleaner, smarter.",
+  'Ask: "What would my upgraded self do differently now?"',
+  "Note one trend today that could shape tomorrow.",
+  "Practice saying a new idea out loud, like pitching future investors.",
+  "Close your eyes: picture your brain connecting new pathways.",
+  "Draft one headline about your future achievements.",
+  "Pretend you're in 2035 — what does this task look like?",
+  'Think: "What if this break made me 1% better long-term?"',
+  'Journal: "What future system am I building right now?"',
+
+  // Micro-Productivity Experiments
+  "Write one sentence summarizing your last 25 minutes.",
+  "Delete a task that doesn't serve your big picture.",
+  "Highlight one next action on your list.",
+  "Break one complex task into smaller atomic steps.",
+  "Set a timer for tomorrow's first task right now.",
+  "Draft an idea in bullet form — ship faster.",
+  "Optimize your notes — future you will find them.",
+  "Write one reminder as if you're your own coach.",
+  "Re-label one task using action verbs only.",
+  "Pick one thing to do differently in the next cycle.",
+
+  // Mental Fitness & Creativity
+  "Solve a quick puzzle — flex mental agility.",
+  "Sketch a random object nearby — design your perspective.",
+  "Write a haiku about your project — pattern shift.",
+  "Think of three alternate solutions to one challenge.",
+  "Reframe one annoyance as a future strength.",
+  "Write one question that could unlock innovation.",
+  "Free-associate words for 2 minutes — fuel creativity.",
+  "Try writing backward — shift brain wiring.",
+  "Build a quick metaphor for your current project.",
+  "Imagine your project as a sci-fi tool — describe it.",
+
+  // Social & Connection
+  "Send a quick encouragement to a teammate.",
+  "Comment positively on one post — spread signal.",
+  'Text a family member "thinking of you."',
+  "Share a micro-win in your notes/chat channel.",
+  "Schedule a 15-min sync for tomorrow.",
+  "Write a one-line update you'd give your future boss.",
+  "Like or bookmark one inspiring thing.",
+  "Share one resource link you found useful.",
+  "Draft a tiny blog/post idea in 2 sentences.",
+  "Reach out to one person you admire online.",
+]
+
+// Long Break Activities - 100 things to do during a 15-minute break
+export const LONG_BREAK_ACTIVITIES = [
+  // Mind & Focus
+  "Meditate for 10 minutes — debug your brain.",
+  "Write down three ideas that could change your week.",
+  "Do a guided breathing session on an app.",
+  "Listen to a short podcast episode or clip.",
+  "Try a 10-minute visualization of your future self.",
+  "Sketch a mind map of one project in progress.",
+  "Reorganize today's notes into clear next steps.",
+  "Do a 15-minute journaling sprint — free your thoughts.",
+  "Write your 3 top learnings from the last work block.",
+  'Run through a "mental reset script": release, refocus, re-energize.',
+
+  // Body & Health
+  "Take a brisk 10-minute walk outside — oxygen boost.",
+  "Do a light yoga flow — stretch futuristic mobility.",
+  "Try a HIIT micro-workout (pushups, squats, planks).",
+  "Prepare a healthy snack — fuel like an upgrade.",
+  "Do resistance band stretches — protect your body's future.",
+  "Dance to two songs — shake stress out of your system.",
+  "Roll your spine slowly — unlock hidden tension.",
+  "Do calf raises while holding onto a chair — micro strength.",
+  "Use a foam roller if you have one — reset muscles.",
+  'Follow a "15-min stretch" video online.',
+
+  // Learning & Growth
+  "Read 5 pages of a book — knowledge compounding.",
+  "Watch a short lecture or masterclass snippet.",
+  "Take a micro online course lesson.",
+  "Explore one Wikipedia rabbit hole intentionally.",
+  "Learn a new keyboard shortcut.",
+  "Watch a coding/design/skill tutorial.",
+  "Read one article and write your takeaway.",
+  'Do a "15-min language learning session."',
+  "Revisit your notes and summarize key points.",
+  "Research a future trend in your field.",
+
+  // Routine & Systems
+  "Declutter one digital folder fully.",
+  "Tidy your physical desk setup.",
+  "Update your task manager with realistic goals.",
+  "Archive old chats/files to create space.",
+  "Batch reply to quick messages or emails.",
+  "Create a micro-automation with tools you use.",
+  "Clear your downloads folder — digital hygiene.",
+  "Plan the next workday in detail.",
+  "Review calendar and adjust for efficiency.",
+  "Identify one routine you can streamline this week.",
+
+  // Self & Reflection
+  "Write a gratitude list with 5 future-oriented items.",
+  "Reflect on one challenge and reframe it as opportunity.",
+  'Write your "ideal day" in the future in bullet points.',
+  "Journal about your energy patterns today.",
+  'Ask: "What\'s my most leveraged action right now?"',
+  "Identify one limiting belief and rewrite it.",
+  "Revisit your goals and measure progress.",
+  "Define three words that describe your future self.",
+  "Note down one lesson you've learned today.",
+  "Free-write your thoughts until the timer ends.",
+
+  // Energy & Quick Hacks
+  "Power nap for 10 minutes.",
+  "Brew tea or coffee slowly — ritual reset.",
+  "Step outside for fresh air and sunshine.",
+  "Try a guided stretching + breathing session.",
+  "Do slow mobility drill — hips, wrists, shoulders.",
+  "Walk barefoot if possible — grounding hack.",
+  "Listen to binaural beats or focus music.",
+  'Practice "box breathing" for nervous system reset.',
+  'Do a "digital detox": no screen for 15 minutes.',
+  "Hydrate fully — a full glass of water and stretch.",
+
+  // Futuristic & Growth-Oriented Mindset
+  "Visualize what your life looks like in 10 years.",
+  'Draft a mini "future self manifesto."',
+  "Think of one trend today you could prepare for.",
+  "Explore how automation could free you in daily tasks.",
+  'Journal: "What role will I play in the future of my industry?"',
+  "Map a skill you want to be future-proof in.",
+  "Imagine yourself as a mentor in 2035 — what advice do you give?",
+  "Envision your current project scaled globally.",
+  'Ask: "What will I regret not starting today?"',
+  'Draft your "next decade vision" in bullet form.',
+
+  // Micro-Productivity Experiments
+  'Do a 15-min "deep clean" of your task backlog.',
+  "Batch small errands (emails, messages).",
+  "Automate one workflow using an app.",
+  "Break one project into clear milestones.",
+  "Write one SOP (standard operating procedure).",
+  "Create a template for a recurring task.",
+  "Rebuild your to-do list in priority order.",
+  "Map dependencies for one project.",
+  "Test a new productivity app for 15 minutes.",
+  "Review your KPIs/OKRs and note one adjustment.",
+
+  // Mental Fitness & Creativity
+  "Solve a brain teaser or puzzle.",
+  "Do a creativity sprint: 20 ideas in 15 minutes.",
+  "Sketch a prototype of something futuristic.",
+  "Write a mini story set 20 years from now.",
+  'Try a "reverse brainstorming" exercise.',
+  "Design a logo concept in your notebook.",
+  "Play an instrument or hum a melody.",
+  "Use AI to generate one crazy idea.",
+  "Write a list of metaphors for your project.",
+  "Do a mini drawing challenge — draw without lifting pen.",
+
+  // Social & Connection
+  "Write a thoughtful message to a colleague or friend.",
+  "Schedule a catch-up with someone you admire.",
+  "Post one insight on your social platform.",
+  "Record a quick voice note for a teammate.",
+  "Reply to someone you've been meaning to.",
+  "Join an online community thread and comment.",
+  "Share a resource link in your team channel.",
+  "Write feedback for a peer.",
+  "Check in on a mentor/mentee.",
+  "Brainstorm one collaboration idea with a teammate.",
+]
+
+// Types
