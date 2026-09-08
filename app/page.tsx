@@ -78,6 +78,8 @@ import type {
 import { BREAK_ACTIVITIES, LONG_BREAK_ACTIVITIES } from "@/lib/activities"
 import { getLocalDateStr, formatRelativeTime, generateTone, playSound } from "@/lib/app-utils"
 import { isWorkdayForToday } from "@/lib/workday"
+import { recordPostureHeld } from "@/lib/daily-stat"
+import { buildBackupJSON, buildBackupCSV, backupFilename } from "@/lib/backup"
 import { AppStateProvider, useAppState } from "@/lib/app-state"
 import { useNotifications } from "@/hooks/use-notifications"
 import { useWorkdayTimer } from "@/hooks/use-workday-timer"
@@ -122,74 +124,41 @@ const PomodoroApp = () => {
   // Backup modal state
   const [showBackupModal, setShowBackupModal] = useState(false)
 
-  // Generate backup data
-  const generateBackupData = useCallback(() => {
-    return {
-      exportDate: new Date().toISOString(),
-      version: "1.0",
-      settings,
-      projects,
-      tasks,
-      stats,
-    }
-  }, [settings, projects, tasks, stats])
-  
-  // Download as JSON
+  // Backup building lives in lib/backup.ts. It used to be duplicated here and
+  // in the Settings panel, and the two copies drifted.
+  const triggerDownload = useCallback((content: string, mime: string, filename: string) => {
+    const blob = new Blob([content], { type: mime })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }, [])
+
+  const backupPayload = useCallback(
+    () => ({ settings, projects, tasks, stats, notes }),
+    [settings, projects, tasks, stats, notes],
+  )
+
   const downloadBackupJSON = useCallback(() => {
-    const data = generateBackupData()
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `pomodoro-backup-${getLocalDateStr()}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }, [generateBackupData])
-  
-  // Download as CSV (flattened format for spreadsheet compatibility)
+    triggerDownload(
+      buildBackupJSON(backupPayload()),
+      "application/json",
+      backupFilename("json", getLocalDateStr()),
+    )
+  }, [backupPayload, triggerDownload])
+
   const downloadBackupCSV = useCallback(() => {
-    const data = generateBackupData()
-    
-    // Create CSV sections
-    let csv = "=== POMODORO BACKUP ===\n"
-    csv += `Export Date,${data.exportDate}\n\n`
-    
-    // Projects section
-    csv += "=== PROJECTS ===\n"
-    csv += "ID,Name,Status,Created At\n"
-    data.projects.forEach(p => {
-      csv += `${p.id},"${p.name}",${p.status},${new Date(p.createdAt).toISOString()}\n`
-    })
-    csv += "\n"
-    
-    // Tasks section
-    csv += "=== TASKS ===\n"
-    csv += "ID,Name,Project ID,Status,Completed Pomodoros,Estimated Pomodoros\n"
-    data.tasks.forEach(t => {
-      csv += `${t.id},"${t.name}",${t.projectId},${t.status},${t.completedPomodoros},${t.estimatedPomodoros || 0}\n`
-    })
-    csv += "\n"
-    
-    // Stats section
-    csv += "=== DAILY STATS ===\n"
-    csv += "Date,Total Pomodoros,Time Spent (min),Short Breaks,Long Breaks,Workday Completed\n"
-    data.stats.forEach(s => {
-      csv += `${s.date},${s.totalPomodoros},${s.timeSpent},${s.shortBreakCount},${s.longBreakCount},${s.workdayCompleted}\n`
-    })
-    
-    const blob = new Blob([csv], { type: "text/csv" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `pomodoro-backup-${getLocalDateStr()}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }, [generateBackupData])
-  
+    triggerDownload(
+      buildBackupCSV(backupPayload()),
+      "text/csv",
+      backupFilename("csv", getLocalDateStr()),
+    )
+  }, [backupPayload, triggerDownload])
+
   // Handle backup modal actions
   const handleBackupAndStart = useCallback((format: "json" | "csv" | "skip") => {
     if (format === "json") {
@@ -200,8 +169,17 @@ const PomodoroApp = () => {
     setShowBackupModal(false)
   }, [downloadBackupJSON, downloadBackupCSV])
 
+  // Land finished posture stretches in today's stat record, which is what
+  // Vitals reads. The hook reports the stretch; storage lives here.
+  const recordPosture = useCallback(
+    (posture: "sitting" | "standing", minutes: number) => {
+      setStats((prev) => recordPostureHeld(prev, getLocalDateStr(), posture, minutes))
+    },
+    [setStats],
+  )
+
   // Initialize workday timer
-  const workdayTimer = useWorkdayTimer(settings)
+  const workdayTimer = useWorkdayTimer(settings, recordPosture)
 
   const durations = useMemo(
     () => ({

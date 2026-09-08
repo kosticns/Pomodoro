@@ -6,7 +6,15 @@ import { useLocalStorage } from "./use-local-storage"
 import { getLocalDateStr } from "@/lib/app-utils"
 import { isWorkdayForToday } from "@/lib/workday"
 
-export const useWorkdayTimer = (settings: Settings) => {
+/**
+ * @param onPostureHeld Called when a posture ENDS, with how long it was held.
+ *   The hook deliberately does not write to stats itself; storage stays out of
+ *   here and the caller decides where the minutes land.
+ */
+export const useWorkdayTimer = (
+  settings: Settings,
+  onPostureHeld?: (posture: "sitting" | "standing", minutes: number) => void,
+) => {
   const [workdayTimer, setWorkdayTimer] = useLocalStorage<WorkdayTimer>("workdayTimer", {
   startTime: null,
   duration: settings.workdayDuration * 60 * 60 * 1000,
@@ -261,10 +269,19 @@ export const useWorkdayTimer = (settings: Settings) => {
   
   // Posture management
   const togglePosture = () => {
+    const now = Date.now()
+    // Report the stretch being closed before overwriting lastPostureChange,
+    // otherwise the elapsed time is unrecoverable.
+    const heldMinutes = workdayTimer.lastPostureChange
+      ? Math.floor((now - workdayTimer.lastPostureChange) / 60000)
+      : 0
+    if (heldMinutes > 0) {
+      onPostureHeld?.(workdayTimer.currentPosture || "sitting", heldMinutes)
+    }
     setWorkdayTimer({
       ...workdayTimer,
       currentPosture: workdayTimer.currentPosture === "sitting" ? "standing" : "sitting",
-      lastPostureChange: Date.now(),
+      lastPostureChange: now,
     })
   }
   

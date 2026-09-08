@@ -2,6 +2,7 @@
 
 import { useAppState } from "@/lib/app-state"
 import { standingCadenceOf } from "@/lib/posture"
+import { buildBackupJSON, buildBackupCSV, backupFilename } from "@/lib/backup"
 import React, { useState, useRef } from "react"
 import {
   Timer,
@@ -56,28 +57,30 @@ export const MobileSettingsPanel = ({
     }
   }
 
-  // JSON Export (full backup)
-  const handleExportJSON = () => {
-  const data = {
-  exportDate: new Date().toISOString(),
-  version: "1.0",
-  settings,
-  projects,
-  tasks,
-  stats,
-  notes,
-  }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
+  // Export building lives in lib/backup.ts. This panel and the Daily Backup
+  // modal in app/page.tsx used to carry separate copies that drifted.
+  const triggerDownload = (content: string, mime: string, filename: string) => {
+    const blob = new Blob([content], { type: mime })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `pomodoro-backup-${getLocalDateStr()}.json`
+    a.download = filename
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
-  
+
+  const backupPayload = () => ({ settings, projects, tasks, stats, notes })
+
+  const handleExportJSON = () => {
+    triggerDownload(
+      buildBackupJSON(backupPayload()),
+      "application/json",
+      backupFilename("json", getLocalDateStr()),
+    )
+  }
+
   // Import JSON Backup
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importError, setImportError] = useState<string | null>(null)
@@ -123,43 +126,12 @@ export const MobileSettingsPanel = ({
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
-  // CSV Export (spreadsheet compatible)
   const handleExportCSV = () => {
-    let csv = "=== POMODORO BACKUP ===\n"
-    csv += `Export Date,${new Date().toISOString()}\n\n`
-    
-    // Projects section
-    csv += "=== PROJECTS ===\n"
-    csv += "ID,Name,Status,Created At\n"
-    projects.forEach(p => {
-      csv += `${p.id},"${p.name}",${p.status},${new Date(p.createdAt).toISOString()}\n`
-    })
-    csv += "\n"
-    
-    // Tasks section
-    csv += "=== TASKS ===\n"
-    csv += "ID,Name,Project ID,Status,Completed Pomodoros,Estimated Pomodoros\n"
-    tasks.forEach(t => {
-      csv += `${t.id},"${t.name}",${t.projectId},${t.status},${t.completedPomodoros},${t.estimatedPomodoros || 0}\n`
-    })
-    csv += "\n"
-    
-    // Stats section
-    csv += "=== DAILY STATS ===\n"
-    csv += "Date,Total Pomodoros,Time Spent (min),Short Breaks,Long Breaks,Workday Completed\n"
-    stats.forEach(s => {
-      csv += `${s.date},${s.totalPomodoros},${s.timeSpent},${s.shortBreakCount},${s.longBreakCount},${s.workdayCompleted}\n`
-    })
-    
-    const blob = new Blob([csv], { type: "text/csv" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `pomodoro-backup-${getLocalDateStr()}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    triggerDownload(
+      buildBackupCSV(backupPayload()),
+      "text/csv",
+      backupFilename("csv", getLocalDateStr()),
+    )
   }
 
   // Text Report Export

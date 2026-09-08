@@ -69,6 +69,15 @@ export interface DailyStat {
   dayStartTime: number | null // timestamp when first activity started
   projectsWorked?: string[] // array of project IDs worked on this day
   projectPomodoros?: Record<string, number> // per-project pomodoro counts for this day
+  // Posture tracking, added 2026-09-08 for Vitals. Optional because days
+  // recorded before that have no posture history and cannot be backfilled.
+  // Minutes are accumulated when a posture ENDS, so the stretch currently in
+  // progress is not included here; see lib/vitals.ts.
+  sittingMinutes?: number
+  standingMinutes?: number
+  postureSwitches?: number
+  longestSitStretch?: number // minutes, single unbroken sit
+  longestStandStretch?: number // minutes, single unbroken stand
 }
 export interface TimerState {
   time: number

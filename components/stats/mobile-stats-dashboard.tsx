@@ -1,6 +1,8 @@
 "use client"
 
 import { useAppState } from "@/lib/app-state"
+import { vitalsForDay } from "@/lib/vitals"
+import { VitalsPanel } from "@/components/vitals/vitals-panel"
 import React, { useState } from "react"
 import {
   Timer,
@@ -288,6 +290,11 @@ export const MobileStatsDashboard = ({
   return (
     <div className="p-4 space-y-6">
       <h1 className="text-xl font-bold text-cyan-500">Statistics</h1>
+
+      {/* Vitals summary. Compact here on purpose: the Breaks screen carries the
+          full reading, and duplicating it would deepen the overlap those two
+          screens already have. */}
+      <VitalsPanel vitals={vitalsForDay(todayStat, settings)} variant="compact" />
 
       {/* Time Progress Bars */}
       <Card className="bg-background/50 border-primary/30">

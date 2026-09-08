@@ -90,6 +90,14 @@ export function migrateStats(raw: any[]): DailyStat[] {
     dayStartTime: stat.dayStartTime || null,
     projectsWorked: stat.projectsWorked || [],
     projectPomodoros: stat.projectPomodoros || undefined,
+    // Posture fields default to 0 rather than undefined so the Vitals maths
+    // never has to guard. A pre-2026-09-08 day legitimately has no posture
+    // history, and 0 is the honest value for it.
+    sittingMinutes: stat.sittingMinutes || 0,
+    standingMinutes: stat.standingMinutes || 0,
+    postureSwitches: stat.postureSwitches || 0,
+    longestSitStretch: stat.longestSitStretch || 0,
+    longestStandStretch: stat.longestStandStretch || 0,
   }))
 }
 

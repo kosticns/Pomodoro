@@ -21,6 +21,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { getLocalDateStr } from "@/lib/app-utils"
+import { vitalsForDay, vitalsForPeriod } from "@/lib/vitals"
+import { VitalsPanel } from "@/components/vitals/vitals-panel"
 import type { Settings, DailyStat } from "@/lib/types"
 
 export const MobileBreaksPanel = () => {
@@ -74,6 +76,15 @@ export const MobileBreaksPanel = () => {
   const wellbeingScore = computeWellbeingScore(totals)
   const wellbeing = wellbeingLabel(wellbeingScore)
   const pomodorosWithoutBreak = computePomodorosWithoutBreak(todayStat)
+
+  // Vitals. Today includes the stretch currently in progress, which is not yet
+  // recorded in stats; a period must not, or that stretch is counted twice.
+  const vitals =
+    viewPeriod === "today"
+      ? vitalsForDay(todayStat, settings)
+      : vitalsForPeriod(periodStats, settings)
+  const vitalsPeriodLabel =
+    viewPeriod === "today" ? "today" : viewPeriod === "week" ? "last 7 days" : "last 30 days"
 
   const todayAccumulatedBreakTime = todayStat?.accumulatedBreakTime || 0
 
@@ -261,6 +272,10 @@ export const MobileBreaksPanel = () => {
           </CardContent>
         </Card>
         
+        {/* Vitals: sitting and standing. Sits above the tip because it is
+            measurement, and the tip below is advice derived from it. */}
+        <VitalsPanel vitals={vitals} periodLabel={vitalsPeriodLabel} />
+
         {/* Tips Card */}
         <Card className="border-yellow-500/30 bg-yellow-500/5">
           <CardContent className="p-4">
