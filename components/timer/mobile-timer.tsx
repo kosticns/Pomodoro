@@ -1,6 +1,7 @@
 "use client"
 
 import { useAppState } from "@/lib/app-state"
+import { standingCadenceOf } from "@/lib/posture"
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import {
   Timer,
@@ -330,7 +331,7 @@ export const MobileTimerComponent = ({
             {/* Posture Reminder */}
             {workdayTimer.hasWorkdayStarted && (settings.standingReminderEnabled !== false) && (
               <div className="mt-3 pt-3 border-t border-cyan-500/20">
-                {workdayTimer.timeSincePostureChange >= (settings.standingCadence || 45) ? (
+                {workdayTimer.timeSincePostureChange >= (standingCadenceOf(settings)) ? (
                   // Time to switch!
                   <div 
                     onClick={workdayTimer.togglePosture}
@@ -367,7 +368,7 @@ export const MobileTimerComponent = ({
                       </span>
                     </div>
                     <span className="text-[10px] text-muted-foreground">
-                      Switch in {(settings.standingCadence || 45) - workdayTimer.timeSincePostureChange}m
+                      Switch in {(standingCadenceOf(settings)) - workdayTimer.timeSincePostureChange}m
                     </span>
                   </div>
                 )}

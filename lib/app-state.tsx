@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect } from "react"
 import { useLocalStorage } from "@/hooks/use-local-storage"
 import type { Settings, Project, Task, Note, DailyStat } from "./types"
+import { DEFAULT_STANDING_CADENCE_MINUTES, needsCadenceMigration } from "./posture"
 
 /**
  * The app's persisted domain state, in one place.
@@ -57,7 +58,7 @@ export const DEFAULT_SETTINGS: Settings = {
   workdayDuration: 8,
   dailyPomodoroGoal: 10,
   standingReminderEnabled: true,
-  standingCadence: 45,
+  standingCadence: DEFAULT_STANDING_CADENCE_MINUTES,
 }
 
 const DEFAULT_PROJECTS: Project[] = [
@@ -116,6 +117,24 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     // mount-time closure. The previous version depended on closure timing,
     // which is what made the old "To Do" migration so fragile.
   }, [setProjects])
+
+  // Move the sit/stand cadence off the old 45-minute default.
+  //
+  // Changing DEFAULT_SETTINGS only affects a fresh install, because a stored
+  // settings object replaces the defaults wholesale. Without this, an existing
+  // device would keep prompting every 45 minutes. Only the exact old default
+  // is touched; see needsCadenceMigration for why that is the safe boundary.
+  //
+  // Returns prev unchanged when there is nothing to do. useLocalStorage's
+  // setter writes on every call, so an unconditional write would churn
+  // storage on each mount.
+  useEffect(() => {
+    setSettings((prev) =>
+      needsCadenceMigration(prev)
+        ? { ...prev, standingCadence: DEFAULT_STANDING_CADENCE_MINUTES }
+        : prev,
+    )
+  }, [setSettings])
 
   useEffect(() => {
     setStats((prev) => (prev.length ? migrateStats(prev) : prev))

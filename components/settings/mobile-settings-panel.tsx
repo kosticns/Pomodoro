@@ -1,6 +1,7 @@
 "use client"
 
 import { useAppState } from "@/lib/app-state"
+import { standingCadenceOf } from "@/lib/posture"
 import React, { useState, useRef } from "react"
 import {
   Timer,
@@ -421,10 +422,10 @@ export const MobileSettingsPanel = ({
   type="number"
   min="15"
   max="120"
-  value={settings.standingCadence || 45}
+  value={standingCadenceOf(settings)}
   onChange={(e) => setSettings({ ...settings, standingCadence: Number(e.target.value) })}
   />
-  <p className="text-[10px] text-muted-foreground">Recommended: 30-60 minutes. Alternate between sitting and standing.</p>
+  <p className="text-[10px] text-muted-foreground">How long to hold one posture before switching. Default is 90 minutes.</p>
   </div>
   )}
   </CardContent>
