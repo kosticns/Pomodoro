@@ -28,7 +28,7 @@ backlog, [REVIEW-UX.md](REVIEW-UX.md) for the interface findings.
 
 ---
 
-## 1. The posture reminder never notifies. Half a day.
+## 1. The posture reminder never notifies. DONE 9 Sep 2026.
 
 **The gap, verified:** notifications fire when a focus session ends
 (`app/page.tsx:445-458`) and when the workday completes
@@ -38,8 +38,10 @@ is a visual card on the Timer screen only.
 So with the cadence now at 90 minutes, the feature asks you to remember to look
 at the app every 90 minutes in order to be reminded. That inverts the point.
 
-**Fix:** one `showNotification` when `timeSincePostureChange` crosses the
-cadence, fired once per stretch rather than every tick.
+**Fixed.** The decision is `shouldRemindPosture` in `lib/posture.ts`, one
+reminder per stretch keyed on `lastPostureChange`. Testing caught that marking
+the stretch notified BEFORE sending lost the reminder whenever permission was
+not yet granted, so `showNotification` now reports whether it fired.
 
 **Honest constraint worth knowing before you ask for more than that.** This
 works while the app is open, including backgrounded. It will NOT fire with the
@@ -49,25 +51,16 @@ export with no backend. Reliable closed-app reminders would mean giving up the
 "nothing to keep alive" property that makes this app cheap to own. My
 recommendation is to take the in-app version and stop there.
 
-## 2. Tell me how wrong my estimates are. One to two days.
+## 2. Estimate accuracy. CANCELLED 9 Sep 2026.
 
-**The best new idea here, because the data already exists and nothing uses it.**
-Every task carries `estimatedPomodoros` and `completedPomodoros`. They are
-rendered as a bare ratio next to the task ("3/5") in four places and aggregated
-nowhere. There is no signal anywhere about estimation accuracy.
+Proposed as the strongest idea here: tasks stored `estimatedPomodoros` and
+`completedPomodoros` and nothing aggregated them, so the app could have told
+you how far off your estimates ran.
 
-What it could say, from data already stored:
-
-- "You typically finish in 1.6x your estimate."
-- "Estimates on Neusatz Archive run 2.1x; on Client work, 1.1x."
-- "Tasks you estimate at 1 pomodoro are your least accurate."
-
-**Why this one and not something flashier:** it answers a question a planner
-actually asks, it needs no new capture, no new permissions and no backend, and
-it gets better the longer the app is used. It is also the only idea here that
-makes the app tell you something you did not already know.
-
-Lives naturally as `lib/estimates.ts` with tests, surfaced on Stats.
+**Mickey's call: the app does not need estimated pomodoros at all.** The field
+and all 13 of its uses were removed rather than left dormant, so there is no
+half-feature collecting data nothing reads. Kept here as a record of the
+decision, not as a backlog item.
 
 ## 3. Give Vitals a trend. One day.
 
@@ -97,17 +90,20 @@ already a real action stranded on the Timer screen: the "5m of break time
 saved" affordance. Moving that into Breaks would make the name honest and give
 the tab a job Stats cannot do.
 
-## 5. Fix the hydration mismatch before adding UI. Half a day.
+## 5. The hydration mismatch. DONE 9 Sep 2026.
 
-React error #418, item 6 in `REVIEW.md`. Caused by 53 `Date.now()` /
-`new Date()` calls in render paths, so the server HTML and first client render
-disagree.
+React error #418 on every load, showing defaults and ignoring taps briefly on a
+cold start.
 
-It is the thing most likely to make the app feel cheap: a cold load briefly
-shows defaults and does not respond to taps. It also made every verification
-this week unreliable, which is a cost you pay on all future work until it is
-fixed. **This is the one I would do first if you care how the app feels rather
-than what it does.**
+**My original diagnosis here was wrong.** This entry, and REVIEW.md item 6,
+blamed 53 `Date.now()` calls in render paths. Those contribute, but the primary
+cause was `useLocalStorage`: its lazy initialiser returned `initialValue` with
+no window and the STORED value on the client's first render, so hydration
+mismatched on any device with data.
+
+Fixed at the cause. The app renders client-side only, since server rendering
+buys nothing when the server cannot see the localStorage that decides what to
+draw. Zero console errors now, and correct values on first paint.
 
 ## 6. Make it work offline. Half a day.
 
@@ -139,8 +135,13 @@ covers the "do not lose my data" case, which is the part that usually matters.
 - **AI anything.** Nothing here needs a model. The estimate work in item 2 is
   arithmetic, and arithmetic you can check beats a suggestion you cannot.
 
-## If you only do two
+## What I would do next
 
-Item 5, then item 1. The first makes everything already built feel solid; the
-second makes a feature you just configured actually function. Item 2 is the one
-to build when you want the app to be more interesting rather than more correct.
+**Item 6, offline.** It is half a day and it is the difference between a site
+and an app on your phone.
+
+Then **item 3**, the Vitals trend, once there is a week or two of posture data
+worth plotting.
+
+**Item 4 needs you, not me.** The two daily goals and the identity of the
+Breaks tab are product calls that no interface change resolves.
