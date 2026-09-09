@@ -1,5 +1,25 @@
 # Ideas
 
+## Done 9 Sep 2026
+
+- **Item 1, the posture reminder now notifies.** Testing caught that marking a
+  stretch "notified" before sending lost the reminder whenever permission was
+  not yet granted.
+- **Item 5, the hydration mismatch is fixed at the cause.** The app renders
+  client-side only. Correction to my own diagnosis: the primary cause was
+  useLocalStorage reading during the initial render, not the Date.now() calls
+  REVIEW.md blamed.
+- **Item 2 is cancelled**, not deferred. Mickey decided estimated pomodoros are
+  not needed at all, so the field and every use of it were removed rather than
+  left dormant.
+- Accessibility and copy pass alongside: tab bar semantics, 44pt switch target,
+  Reduce Motion, slider accent and name, all-caps removed app-wide.
+
+Still open: **item 3** (Vitals trend, worth waiting a week for data),
+**item 4** (the two product decisions, yours), **item 6** (offline service
+worker), **item 7** (sync, still recommended against).
+
+
 Written 9 Sep 2026, after the Vitals work. Grounded in what the code actually
 does, not a feature wishlist. Each entry says what it unlocks and what it costs.
 
