@@ -13,7 +13,7 @@ function payload(over: Partial<BackupPayload> = {}): BackupPayload {
       { id: "p1", name: "Neusatz Archive", status: "Ongoing", createdAt: 1_700_000_000_000, lastInteractionTime: 1_700_000_000_000 },
     ],
     tasks: [
-      { id: "t1", name: "Write docs", projectId: "p1", completedPomodoros: 3, status: "In Progress", estimatedPomodoros: 5 },
+      { id: "t1", name: "Write docs", projectId: "p1", completedPomodoros: 3, status: "In Progress" },
     ],
     stats: [
       {
@@ -41,7 +41,7 @@ describe("buildBackupJSON", () => {
 
   it("declares the current version", () => {
     expect(JSON.parse(buildBackupJSON(payload(), AT)).version).toBe(BACKUP_VERSION)
-    expect(BACKUP_VERSION).toBe("1.1")
+    expect(BACKUP_VERSION).toBe("1.2")
   })
 
   it("carries the posture fields so Vitals survive a backup", () => {

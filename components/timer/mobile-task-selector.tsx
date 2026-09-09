@@ -67,7 +67,6 @@ export const MobileTaskSelector = () => {
   completedPomodoros: 0,
   status: "In Progress",
   lastInteractionTime: Date.now(),
-  estimatedPomodoros: 1, // Default value for estimatedPomodoros
   }
       const updatedTasks = [...tasks, newTask]
       setTasks(updatedTasks)

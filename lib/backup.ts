@@ -22,8 +22,13 @@ export interface BackupPayload {
   notes: Note[]
 }
 
-/** Current backup format. 1.1 added notes and the posture fields. */
-export const BACKUP_VERSION = "1.1"
+/**
+ * Current backup format.
+ * 1.1 added notes and the posture fields.
+ * 1.2 dropped Estimated Pomodoros, which the app no longer tracks. Restoring a
+ * 1.0 or 1.1 file still works; the extra property is simply ignored.
+ */
+export const BACKUP_VERSION = "1.2"
 
 export function buildBackupJSON(payload: BackupPayload, now: Date = new Date()): string {
   return JSON.stringify(
@@ -65,10 +70,10 @@ export function buildBackupCSV(payload: BackupPayload, now: Date = new Date()): 
   lines.push("")
 
   lines.push("=== TASKS ===")
-  lines.push("ID,Name,Project ID,Status,Completed Pomodoros,Estimated Pomodoros")
+  lines.push("ID,Name,Project ID,Status,Completed Pomodoros")
   for (const t of tasks) {
     lines.push(
-      `${t.id},${csvQuote(t.name)},${t.projectId},${t.status},${t.completedPomodoros},${t.estimatedPomodoros || 0}`,
+      `${t.id},${csvQuote(t.name)},${t.projectId},${t.status},${t.completedPomodoros}`,
     )
   }
   lines.push("")

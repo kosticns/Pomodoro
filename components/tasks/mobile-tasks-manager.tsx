@@ -15,7 +15,6 @@ import {
   Search,
   ArrowUpDown,
   CheckSquare,
-  Minus,
   FolderOpen,
   ChevronRight,
   Sunrise,
@@ -47,7 +46,6 @@ export const MobileTasksManager = () => {
   const [isAddProjectDialogOpen, setIsAddProjectDialogOpen] = useState(false)
   const [newTaskName, setNewTaskName] = useState("")
   const [newTaskProjectId, setNewTaskProjectId] = useState<string>("")
-  const [newTaskEstimate, setNewTaskEstimate] = useState(1)
   const [newProjectName, setNewProjectName] = useState("")
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [menuTask, setMenuTask] = useState<Task | null>(null)
@@ -244,12 +242,10 @@ export const MobileTasksManager = () => {
   completedPomodoros: 0,
   status: "In Progress",
   lastInteractionTime: Date.now(),
-  estimatedPomodoros: newTaskEstimate,
   }
 
     setTasks([...tasks, newTask])
     setNewTaskName("")
-    setNewTaskEstimate(1)
     setIsAddTaskDialogOpen(false)
   }
 
@@ -654,7 +650,7 @@ export const MobileTasksManager = () => {
                         {/* Pomodoro count */}
                         <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
                           <Timer className="h-3 w-3" />
-                          {task.completedPomodoros}/{task.estimatedPomodoros}
+                          {task.completedPomodoros}
                         </span>
                         
                         {/* Notes count - clickable */}
@@ -915,7 +911,7 @@ export const MobileTasksManager = () => {
   </span>
   )}
   <span className="text-[10px] text-muted-foreground">
-  {task.completedPomodoros}/{task.estimatedPomodoros || "?"}
+  {task.completedPomodoros}
   </span>
   <Badge
   variant="outline"
@@ -1142,27 +1138,6 @@ export const MobileTasksManager = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="task-estimate">Estimated Pomodoros</Label>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setNewTaskEstimate(Math.max(1, newTaskEstimate - 1))}
-                  disabled={newTaskEstimate <= 1}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="text-lg font-bold w-8 text-center">{newTaskEstimate}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setNewTaskEstimate(newTaskEstimate + 1)}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
           </div>
           <DialogFooter>
             <Button
@@ -1264,27 +1239,6 @@ export const MobileTasksManager = () => {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Estimated Pomodoros</Label>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setEditingTask(editingTask ? { ...editingTask, estimatedPomodoros: Math.max(1, editingTask.estimatedPomodoros - 1) } : null)}
-                  disabled={!editingTask || editingTask.estimatedPomodoros <= 1}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="text-lg font-bold w-8 text-center">{editingTask?.estimatedPomodoros || 1}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setEditingTask(editingTask ? { ...editingTask, estimatedPomodoros: editingTask.estimatedPomodoros + 1 } : null)}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
           </div>
           <DialogFooter>
             <Button onClick={handleEditTask} disabled={!editingTask?.name.trim()} className="w-full">
@@ -1384,7 +1338,7 @@ export const MobileTasksManager = () => {
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Timer className="h-4 w-4" />
-                  {currentReviewTask.completedPomodoros}/{currentReviewTask.estimatedPomodoros} pomodoros
+                  {currentReviewTask.completedPomodoros} pomodoros
                 </span>
                 <Badge
                   variant="outline"

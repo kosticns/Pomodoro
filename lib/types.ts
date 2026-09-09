@@ -34,7 +34,6 @@ export interface Task {
   completedPomodoros: number
   status: TaskStatus
   lastInteractionTime?: number // Timestamp of last interaction
-  estimatedPomodoros: number // Added estimatedPomodoros back to Task interface
 }
 export interface Settings {
   focusDuration: number

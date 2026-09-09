@@ -256,7 +256,7 @@ export const MobileSettingsPanel = ({
           projectTasks.forEach((task) => {
             const statusIcon = task.status === "Done" ? "[x]" : task.status === "In Progress" ? "[>]" : "[ ]"
             report += `    ${statusIcon} ${task.name}\n`
-            report += `        Status: ${task.status} | Pomodoros: ${task.completedPomodoros}/${task.estimatedPomodoros}\n`
+            report += `        Status: ${task.status} | Pomodoros: ${task.completedPomodoros}\n`
           })
           report += "\n"
         })
