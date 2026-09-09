@@ -79,6 +79,7 @@ import { BREAK_ACTIVITIES, LONG_BREAK_ACTIVITIES } from "@/lib/activities"
 import { getLocalDateStr, formatRelativeTime, generateTone, playSound } from "@/lib/app-utils"
 import { isWorkdayForToday } from "@/lib/workday"
 import { recordPostureHeld } from "@/lib/daily-stat"
+import { standingCadenceOf, shouldRemindPosture } from "@/lib/posture"
 import { buildBackupJSON, buildBackupCSV, backupFilename } from "@/lib/backup"
 import { AppStateProvider, useAppState } from "@/lib/app-state"
 import { useNotifications } from "@/hooks/use-notifications"
@@ -169,6 +170,17 @@ const PomodoroApp = () => {
     setShowBackupModal(false)
   }, [downloadBackupJSON, downloadBackupCSV])
 
+  // Notify once per stretch when it is time to change posture.
+  //
+  // The reminder was previously a visual card on the Timer screen and nothing
+  // else, so with a 90-minute cadence it asked you to remember to look at the
+  // app in order to be reminded. Sessions and workday completion both notify;
+  // this closes the gap.
+  //
+  // Keyed on lastPostureChange so it fires once per stretch rather than on
+  // every tick, and resets naturally when the posture changes.
+  const notifiedPostureRef = useRef<number | null>(null)
+
   // Land finished posture stretches in today's stat record, which is what
   // Vitals reads. The hook reports the stretch; storage lives here.
   const recordPosture = useCallback(
@@ -180,6 +192,38 @@ const PomodoroApp = () => {
 
   // Initialize workday timer
   const workdayTimer = useWorkdayTimer(settings, recordPosture)
+
+  // Fire the posture reminder. Runs off timeSincePostureChange, which the hook
+  // already recomputes each tick, so no extra timer is needed.
+  useEffect(() => {
+    const changedAt = workdayTimer.workdayTimer.lastPostureChange
+    const due = shouldRemindPosture({
+      reminderEnabled: settings.standingReminderEnabled,
+      workdayActive: workdayTimer.isWorkdayActive,
+      lastPostureChange: changedAt,
+      minutesInPosture: workdayTimer.timeSincePostureChange,
+      cadenceMinutes: standingCadenceOf(settings),
+      lastNotifiedChangeAt: notifiedPostureRef.current,
+    })
+    if (!due) return
+
+    const standing = workdayTimer.currentPosture === "standing"
+    const sent = showNotification(standing ? "Time to sit down" : "Time to stand up", {
+      body: `You have been ${standing ? "standing" : "sitting"} for ${workdayTimer.timeSincePostureChange} minutes.`,
+      icon: "/icon-192x192.png",
+    })
+    // Only mark the stretch as handled once the notification actually went
+    // out. Marking first meant that if permission was not yet granted, the
+    // reminder was lost for the rest of that stretch.
+    if (sent) notifiedPostureRef.current = changedAt
+  }, [
+    workdayTimer.timeSincePostureChange,
+    workdayTimer.workdayTimer.lastPostureChange,
+    workdayTimer.isWorkdayActive,
+    workdayTimer.currentPosture,
+    settings,
+    showNotification,
+  ])
 
   const durations = useMemo(
     () => ({

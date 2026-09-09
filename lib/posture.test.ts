@@ -4,6 +4,7 @@ import {
   LEGACY_STANDING_CADENCE_MINUTES,
   standingCadenceOf,
   needsCadenceMigration,
+  shouldRemindPosture,
 } from "./posture"
 
 describe("standingCadenceOf", () => {
@@ -50,5 +51,54 @@ describe("needsCadenceMigration", () => {
     expect(needsCadenceMigration(stored)).toBe(true)
     const migrated = { standingCadence: DEFAULT_STANDING_CADENCE_MINUTES }
     expect(needsCadenceMigration(migrated)).toBe(false)
+  })
+})
+
+describe("shouldRemindPosture", () => {
+  const base = {
+    reminderEnabled: true,
+    workdayActive: true,
+    lastPostureChange: 1_000,
+    minutesInPosture: 90,
+    cadenceMinutes: 90,
+    lastNotifiedChangeAt: null as number | null,
+  }
+
+  it("fires once the cadence is reached", () => {
+    expect(shouldRemindPosture(base)).toBe(true)
+  })
+
+  it("stays quiet before the cadence is reached", () => {
+    expect(shouldRemindPosture({ ...base, minutesInPosture: 89 })).toBe(false)
+  })
+
+  it("does not fire twice for the same stretch", () => {
+    expect(shouldRemindPosture({ ...base, lastNotifiedChangeAt: 1_000 })).toBe(false)
+  })
+
+  it("fires again after the posture changes, since the timestamp moved", () => {
+    // lastPostureChange has advanced; the old notified marker no longer matches.
+    expect(shouldRemindPosture({ ...base, lastPostureChange: 2_000, lastNotifiedChangeAt: 1_000 })).toBe(true)
+  })
+
+  it("respects the reminder being switched off", () => {
+    expect(shouldRemindPosture({ ...base, reminderEnabled: false })).toBe(false)
+  })
+
+  it("treats an unset reminder flag as enabled, matching the UI", () => {
+    expect(shouldRemindPosture({ ...base, reminderEnabled: undefined })).toBe(true)
+  })
+
+  it("stays quiet when no workday is running", () => {
+    expect(shouldRemindPosture({ ...base, workdayActive: false })).toBe(false)
+  })
+
+  it("stays quiet with no posture timestamp to measure from", () => {
+    expect(shouldRemindPosture({ ...base, lastPostureChange: null })).toBe(false)
+  })
+
+  it("follows the user's cadence rather than a fixed number", () => {
+    expect(shouldRemindPosture({ ...base, minutesInPosture: 50, cadenceMinutes: 45 })).toBe(true)
+    expect(shouldRemindPosture({ ...base, minutesInPosture: 50, cadenceMinutes: 120 })).toBe(false)
   })
 })

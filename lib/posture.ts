@@ -38,3 +38,30 @@ export function standingCadenceOf(settings: Pick<Settings, "standingCadence">): 
 export function needsCadenceMigration(settings: Pick<Settings, "standingCadence">): boolean {
   return settings.standingCadence === LEGACY_STANDING_CADENCE_MINUTES
 }
+
+/**
+ * Should the posture reminder fire right now?
+ *
+ * Extracted from the effect in app/page.tsx so the decision is testable. The
+ * effect stays thin: evaluate this, send, and record the send.
+ *
+ * @param lastNotifiedChangeAt the lastPostureChange value we have already
+ *   notified about. Comparing against the timestamp rather than counting means
+ *   one reminder per stretch, self-resetting when the posture changes.
+ */
+export function shouldRemindPosture(args: {
+  reminderEnabled: boolean | undefined
+  workdayActive: boolean
+  lastPostureChange: number | null
+  minutesInPosture: number
+  cadenceMinutes: number
+  lastNotifiedChangeAt: number | null
+}): boolean {
+  // Undefined counts as enabled, matching how the UI reads this setting.
+  if (args.reminderEnabled === false) return false
+  if (!args.workdayActive) return false
+  if (!args.lastPostureChange) return false
+  if (args.minutesInPosture < args.cadenceMinutes) return false
+  if (args.lastNotifiedChangeAt === args.lastPostureChange) return false
+  return true
+}
