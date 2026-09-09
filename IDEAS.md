@@ -2,6 +2,12 @@
 
 ## Done 9 Sep 2026
 
+- **Start-of-day prompt and a clock.** The backup modal was attached to
+  pressing play; it is now once per day from a set hour (default 8), and the
+  workday card shows the current time and when the day started. Not a scheduled
+  08:00 fire, because the app is usually closed then; it prompts on first sight
+  of a new day past the hour.
+
 - **Item 1, the posture reminder now notifies.** Testing caught that marking a
   stretch "notified" before sending lost the reminder whenever permission was
   not yet granted.
