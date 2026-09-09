@@ -455,7 +455,7 @@ export const DesktopDashboard = ({
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className={cn(
-                      "px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider",
+                      "px-3 py-1 rounded-full text-xs font-semibold tracking-wider",
                       sessionType === "focus" && "bg-primary/20 text-primary border border-primary/30",
                       sessionType === "shortBreak" && "bg-secondary/20 text-secondary border border-secondary/30",
                       sessionType === "longBreak" && "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30",

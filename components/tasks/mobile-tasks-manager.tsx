@@ -616,7 +616,7 @@ export const MobileTasksManager = () => {
                           {task.name}
                         </h3>
                         {isActive && (
-                          <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/40 text-[10px] px-1.5">
+                          <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/40 text-xs px-1.5">
                             ACTIVE
                           </Badge>
                         )}
@@ -627,7 +627,7 @@ export const MobileTasksManager = () => {
                         <button
                           onClick={() => setFilterProject(filterProject === task.projectId ? null : task.projectId)}
                           className={cn(
-                            "text-[10px] px-2 py-0.5 rounded border transition-all hover:opacity-80",
+                            "text-xs px-2 py-0.5 rounded border transition-all hover:opacity-80",
                             getProjectColor(task.projectId)
                           )}
                         >
@@ -638,7 +638,7 @@ export const MobileTasksManager = () => {
                         <Badge
                           variant="outline"
                           className={cn(
-                            "text-[10px] px-1.5",
+                            "text-xs px-1.5",
                             task.status === "Done" && "border-green-500/50 text-green-500",
                             task.status === "In Progress" && "border-cyan-500/50 text-cyan-500",
                             
@@ -648,7 +648,7 @@ export const MobileTasksManager = () => {
                         </Badge>
                         
                         {/* Pomodoro count */}
-                        <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                        <span className="text-xs text-muted-foreground flex items-center gap-0.5">
                           <Timer className="h-3 w-3" />
                           {task.completedPomodoros}
                         </span>
@@ -657,7 +657,7 @@ export const MobileTasksManager = () => {
                         <button
                           onClick={() => setViewingNotesTask(task)}
                           className={cn(
-                            "text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded hover:bg-primary/10 transition-colors",
+                            "text-xs flex items-center gap-0.5 px-1.5 py-0.5 rounded hover:bg-primary/10 transition-colors",
                             notes.filter(n => n.taskId === task.id).length > 0 
                               ? "text-primary" 
                               : "text-muted-foreground"
@@ -812,7 +812,7 @@ export const MobileTasksManager = () => {
                                 <Badge
                                   variant="outline"
                                   className={cn(
-                                    "text-[10px] px-1.5",
+                                    "text-xs px-1.5",
                                     project.status === "Done" && "border-green-500/50 text-green-500",
                                     project.status === "Ongoing" && "border-cyan-500/50 text-cyan-500",
                                     project.status === "On Hold" && "border-yellow-500/50 text-yellow-500",
@@ -822,20 +822,20 @@ export const MobileTasksManager = () => {
                                 </Badge>
                                 
                                 {/* Task count */}
-                                <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                                <span className="text-xs text-muted-foreground flex items-center gap-0.5">
                                   <CheckSquare className="h-3 w-3" />
                                   {activeTaskCount}/{taskCount} tasks
                                 </span>
                                 
   {/* Pomodoro count */}
-  <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+  <span className="text-xs text-muted-foreground flex items-center gap-0.5">
   <Timer className="h-3 w-3" />
   {completedPomodoros} pomodoros
   </span>
   
   {/* Notes count */}
   {notes.filter(n => n.projectId === project.id).length > 0 && (
-  <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+  <span className="text-xs text-muted-foreground flex items-center gap-0.5">
   <StickyNote className="h-3 w-3" />
   {notes.filter(n => n.projectId === project.id).length} notes
   </span>
@@ -905,18 +905,18 @@ export const MobileTasksManager = () => {
   </div>
   <div className="flex items-center gap-2 shrink-0">
   {notes.filter(n => n.taskId === task.id).length > 0 && (
-  <span className="text-[10px] text-primary flex items-center gap-0.5">
+  <span className="text-xs text-primary flex items-center gap-0.5">
   <StickyNote className="h-2.5 w-2.5" />
   {notes.filter(n => n.taskId === task.id).length}
   </span>
   )}
-  <span className="text-[10px] text-muted-foreground">
+  <span className="text-xs text-muted-foreground">
   {task.completedPomodoros}
   </span>
   <Badge
   variant="outline"
   className={cn(
-  "text-[9px] px-1 py-0",
+  "text-xs px-1 py-0",
   task.status === "Done" && "border-green-500/50 text-green-500",
   task.status === "In Progress" && "border-cyan-500/50 text-cyan-500",
   task.status === "To Do" && "border-muted-foreground/50 text-muted-foreground",
@@ -1265,7 +1265,7 @@ export const MobileTasksManager = () => {
           getTaskNotes(viewingNotesTask.id).map((note) => (
             <div key={note.id} className="bg-muted/30 border border-border/50 rounded-lg p-3">
               <p className="text-sm text-foreground whitespace-pre-wrap">{note.content}</p>
-              <p className="text-[10px] text-muted-foreground mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
                 {new Date(note.createdAt).toLocaleDateString("en-US", { 
                   month: "short", 
                   day: "numeric",
@@ -1504,7 +1504,7 @@ export const MobileTasksManager = () => {
             </div>
             
             {/* Info about task sync */}
-            <p className="text-[10px] text-muted-foreground mt-4 text-center">
+            <p className="text-xs text-muted-foreground mt-4 text-center">
               Marking Done will complete all tasks. On Hold will pause active tasks.
             </p>
           </div>

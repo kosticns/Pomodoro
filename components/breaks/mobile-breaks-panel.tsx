@@ -131,7 +131,7 @@ export const MobileBreaksPanel = () => {
             )}
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Well-being Score</p>
+                <p className="text-xs text-muted-foreground tracking-wider mb-1">Well-being Score</p>
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-bold text-foreground">{wellbeingScore}</span>
                   <span className="text-lg text-muted-foreground">/100</span>

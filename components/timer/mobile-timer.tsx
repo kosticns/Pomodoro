@@ -278,7 +278,7 @@ export const MobileTimerComponent = ({
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2 mb-1">
-                    <div className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Workday Active</div>
+                    <div className="text-xs font-semibold text-cyan-400 tracking-wider">Workday Active</div>
                     <div className="text-xs text-foreground/50 font-mono">
                       {workdayTimer.workdayProgress.toFixed(0)}% complete
                     </div>
@@ -287,7 +287,7 @@ export const MobileTimerComponent = ({
                     <div className="text-2xl font-bold text-cyan-400 tabular-nums">
                       {workdayTimer.formatWorkdayTime(workdayTimer.remainingTime)}
                     </div>
-                    <div className="text-xs text-foreground/50 uppercase tracking-wide font-mono">remaining</div>
+                    <div className="text-xs text-foreground/50 tracking-wide font-mono">remaining</div>
                   </div>
                 </div>
               </div>
@@ -295,7 +295,7 @@ export const MobileTimerComponent = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div>
-                    <div className="text-sm font-bold text-secondary uppercase tracking-wider">Workday Complete!</div>
+                    <div className="text-sm font-bold text-secondary tracking-wider">Workday Complete!</div>
                     <div className="text-xs text-foreground/60 font-mono">
                       {settings.workdayDuration}h completed today
                     </div>
@@ -307,12 +307,12 @@ export const MobileTimerComponent = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div>
-                    <div className="text-sm font-bold text-foreground uppercase tracking-wider">Workday Timer</div>
+                    <div className="text-sm font-bold text-foreground tracking-wider">Workday Timer</div>
                     <div className="text-xs text-foreground/60 font-mono">Ready to start</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs text-foreground/60 uppercase tracking-wide mb-1 font-mono">Daily Goal</div>
+                  <div className="text-xs text-foreground/60 tracking-wide mb-1 font-mono">Daily Goal</div>
                   <div className="text-xl font-bold text-primary tabular-nums text-glow-yellow">
                     {settings.workdayDuration}h 00m
                   </div>
@@ -381,7 +381,7 @@ export const MobileTimerComponent = ({
       <div className="shrink-0 text-center space-y-2">
         <div
           className={cn(
-            "inline-flex px-6 py-2 text-sm font-bold uppercase tracking-widest",
+            "inline-flex px-6 py-2 text-sm font-bold tracking-widest",
             "border-2 transition-colors duration-300",
             sessionType === "focus" && "border-primary text-primary bg-primary/10",
             sessionType === "shortBreak" && "border-secondary text-secondary bg-secondary/10",
@@ -485,7 +485,7 @@ export const MobileTimerComponent = ({
             {activeTask && sessionType === "focus" && (
               <div className="mt-2 text-center px-3">
                 <div className="text-xs sm:text-sm text-foreground/90 font-semibold truncate max-w-[160px] sm:max-w-[180px]">{activeTask.name}</div>
-                <div className="text-[10px] sm:text-xs text-foreground/60 mt-0.5 font-mono uppercase tracking-wide">
+                <div className="text-[10px] sm:text-xs text-foreground/60 mt-0.5 font-mono tracking-wide">
                   {projects.find((p) => p.id === activeTask.projectId)?.name || "Unknown Project"}
                 </div>
               </div>

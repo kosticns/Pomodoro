@@ -23,7 +23,7 @@ export const MobileWorkdayWidget = ({ workdayTimer }: { workdayTimer: ReturnType
               <div className="flex items-center space-x-3">
                 <Briefcase className="h-5 w-5 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
                 <div>
-                  <div className="text-sm font-bold text-cyan-400 uppercase tracking-wider">
+                  <div className="text-sm font-bold text-cyan-400 tracking-wider">
                     Workday Active {workdayTimer.isPaused && "(Paused)"}
                   </div>
                   <div className="text-xs text-foreground/60 font-mono">
@@ -54,7 +54,7 @@ export const MobileWorkdayWidget = ({ workdayTimer }: { workdayTimer: ReturnType
                   <div className="text-xl font-bold text-cyan-400 tabular-nums text-glow">
                     {workdayTimer.formatWorkdayTime(workdayTimer.remainingTime)}
                   </div>
-                  <div className="text-xs text-foreground/60 uppercase tracking-wide font-mono">remaining</div>
+                  <div className="text-xs text-foreground/60 tracking-wide font-mono">remaining</div>
                 </div>
               </div>
             </div>
@@ -70,7 +70,7 @@ export const MobileWorkdayWidget = ({ workdayTimer }: { workdayTimer: ReturnType
             <div className="flex items-center space-x-3">
               <Briefcase className="h-5 w-5 text-emerald-400" />
               <div>
-                <div className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Workday Complete!</div>
+                <div className="text-sm font-bold text-emerald-400 tracking-wider">Workday Complete!</div>
                 <div className="text-xs text-foreground/60 font-mono">8h completed today</div>
               </div>
             </div>
@@ -81,12 +81,12 @@ export const MobileWorkdayWidget = ({ workdayTimer }: { workdayTimer: ReturnType
             <div className="flex items-center space-x-3">
               <Briefcase className="h-5 w-5 text-muted-foreground" />
               <div>
-                <div className="text-sm font-bold text-foreground uppercase tracking-wider">Workday Timer</div>
+                <div className="text-sm font-bold text-foreground tracking-wider">Workday Timer</div>
                 <div className="text-xs text-foreground/60 font-mono">Ready to start</div>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-xs text-foreground/60 uppercase tracking-wide mb-1 font-mono">Daily Goal</div>
+              <div className="text-xs text-foreground/60 tracking-wide mb-1 font-mono">Daily Goal</div>
               <div className="text-xl font-bold text-primary tabular-nums text-glow-yellow">8h 00m</div>
             </div>
           </div>

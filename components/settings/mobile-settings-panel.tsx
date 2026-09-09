@@ -491,6 +491,8 @@ export const MobileSettingsPanel = ({
               step="0.1"
               value={settings.soundVolume}
               onChange={(e) => setSettings({ ...settings, soundVolume: Number(e.target.value) })}
+              aria-label="Volume"
+              aria-valuetext={`${Math.round(settings.soundVolume * 100)} percent`}
             />
           </div>
 
@@ -580,7 +582,9 @@ export const MobileSettingsPanel = ({
             {notificationPermission === "granted" && (
               <span className="text-sm text-green-600 font-medium">Enabled</span>
             )}
-            {notificationPermission === "denied" && <span className="text-sm text-red-600 font-medium">Disabled</span>}
+            {/* red-400, not red-600: on this near-black background red-600
+                measures 3.93:1, under the 4.5:1 minimum for body text. */}
+            {notificationPermission === "denied" && <span className="text-sm text-red-400 font-medium">Disabled</span>}
           </div>
         </CardContent>
       </Card>

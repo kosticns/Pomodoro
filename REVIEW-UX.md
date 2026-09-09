@@ -47,8 +47,9 @@ Five foundational moves fix most of the register:
 - **F3. One page header.** Four screens, four different heading treatments, one
   of them missing entirely.
 - **F4. One status system.** A task can carry five competing chips.
-- **F5. An accessibility baseline pass.** Status text currently fails contrast
-  by roughly a factor of three.
+- **F5. An accessibility baseline pass.** Tab bar semantics, touch targets
+  and Reduce Motion. (The contrast claim originally here was retracted; see
+  AX-1.)
 
 ### Product-level observation, ahead of the interface
 
@@ -202,22 +203,28 @@ yellow, so two adjacent controls in the same card belong to different systems.
 
 Against AA+ v4.1.2.
 
-### AX-1: Status badges fail contrast by roughly three times · **High**
+### AX-1: Status badges fail contrast by roughly three times · **RETRACTED**
 
-Measured foreground against actual composited background:
-
-| Element | Ratio | Required |
-|---|---|---|
-| "In Progress" | **1.51:1** | 4.5:1 |
-| "ACTIVE" | **1.64:1** | 4.5:1 |
-| Project name chip | **1.64:1** | 4.5:1 |
-| "Admin and invoicing" | **2.11:1** | 4.5:1 |
-
-All are 10px, which is itself below a comfortable minimum. These are the
-labels that carry task state.
-
-**Recommendation:** raise chip text to at least 12px and lift the fill and
-foreground until each pair clears 4.5:1.
+> **This finding was wrong, and the numbers below were a measurement bug.**
+> Retracted 9 Sep 2026.
+>
+> The original ratios (1.51:1 to 2.11:1) came from my own contrast script, which
+> had two defects. It parsed colours with a `[\d.]+` regex, so Tailwind 4's
+> `lab(67.805 -35.3952 -30.2018)` lost its minus signs and resolved to a dark
+> brown. And its "is this transparent" check was `/, ?0\)$/`, which matches
+> `rgb(255, 255, 0)`, so pure yellow backgrounds were discarded as transparent.
+>
+> Re-measured by painting each colour into a canvas and letting the browser
+> resolve it, compositing every ancestor background in order. Across all five
+> screens there was exactly **one** genuine failure: "Disabled" on Settings at
+> 3.93:1 against a 4.5:1 minimum, now fixed by moving red-600 to red-400.
+>
+> The badges pass. The chip text was still lifted from 10px to 12px, which was
+> a legitimate separate point about small text.
+>
+> **Method note for next time:** never parse a CSS colour with a regex. Paint it
+> and read the pixel. Three successive measurements in this area were wrong
+> before the canvas method gave a stable answer.
 
 ### AX-2: The tab bar has no semantics · **High**
 

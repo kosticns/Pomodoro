@@ -784,16 +784,25 @@ const skipSession = useCallback(() => {
           </main>
 
           {/* Mobile Bottom Navigation */}
-          <nav className="fixed bottom-0 left-0 right-0 flex border-t bg-background/95 backdrop-blur-sm z-50 pb-[env(safe-area-inset-bottom)]">
+          <nav
+            role="tablist"
+            aria-label="Main"
+            className="fixed bottom-0 left-0 right-0 flex border-t bg-background/95 backdrop-blur-sm z-50 pb-[env(safe-area-inset-bottom)]"
+          >
             {navItems.map((item) => (
               <Button
                 key={item.id}
                 variant="ghost"
+                role="tab"
+                aria-selected={activeView === item.id}
+                aria-current={activeView === item.id ? "page" : undefined}
                 className={cn(
-                  "flex-1 flex flex-col items-center justify-center h-16 rounded-none space-y-1 transition-colors min-w-0",
+                  // border-t-2 gives the active tab a non-colour indicator, so
+                  // the selected state does not rely on hue alone.
+                  "flex-1 flex flex-col items-center justify-center h-16 rounded-none space-y-1 transition-colors min-w-0 border-t-2",
                   activeView === item.id
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                    ? "text-primary bg-primary/10 border-t-primary"
+                    : "text-muted-foreground border-t-transparent hover:text-foreground hover:bg-muted/50",
                 )}
                 onClick={() => setActiveView(item.id)}
               >

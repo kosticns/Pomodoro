@@ -221,3 +221,25 @@ body {
   pointer-events: none;
   z-index: 1000;
 }
+
+/* AX: honour Reduce Motion.
+   The stylesheet had 8 rules using animation or transition and zero
+   prefers-reduced-motion rules, so the ring glow, progress fills and tab
+   transitions all animated regardless of the system setting. Near-zero rather
+   than 0s so transitionend still fires and nothing waits forever on it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* AX: the volume slider was a bare input[type=range] with accent-color: auto,
+   so it rendered in browser-default blue, a colour used nowhere else. */
+input[type="range"] {
+  accent-color: var(--primary);
+}
