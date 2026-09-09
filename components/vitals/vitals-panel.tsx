@@ -42,13 +42,13 @@ function PostureTile({
   icon: React.ComponentType<{ className?: string }>
 }) {
   return (
-    <div className="flex-1 rounded-lg border border-border/60 p-3 space-y-2">
+    <div className="flex-1 rounded-lg border border-border/60 p-2.5 space-y-1">
       <div className="flex items-center gap-2">
         <Icon className="h-3.5 w-3.5 text-primary" />
         <span className="text-xs text-muted-foreground">{label}</span>
       </div>
-      <p className="text-xl font-bold text-foreground">{formatMinutes(minutes)}</p>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-lg font-bold text-foreground leading-tight">{formatMinutes(minutes)}</p>
+      <p className="text-xs text-muted-foreground leading-snug">
         Longest {formatMinutes(longest)}
         {overrun > 0 ? (
           <span className="text-amber-400">, {formatMinutes(overrun)} over {target}m</span>
@@ -94,7 +94,7 @@ export function VitalsPanel({
     const watch = notes.filter((n) => n.level === "watch").length
     return (
       <Card>
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-3 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Activity className="h-4 w-4 text-primary" />
@@ -104,7 +104,7 @@ export function VitalsPanel({
               {vitals.standingSharePct}% standing
             </span>
           </div>
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span>Sat {formatMinutes(vitals.sittingMinutes)}</span>
             <span>Stood {formatMinutes(vitals.standingMinutes)}</span>
             <span>{vitals.postureSwitches} switches</span>
@@ -121,8 +121,8 @@ export function VitalsPanel({
 
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center gap-2">
+      <CardHeader className="pb-0">
+        <CardTitle className="text-sm flex items-center gap-2">
           <Activity className="h-4 w-4 text-primary" />
           Vitals
           {periodLabel && (
@@ -130,8 +130,8 @@ export function VitalsPanel({
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex gap-3">
+      <CardContent className="space-y-2.5">
+        <div className="flex gap-2">
           <PostureTile
             label="Sitting"
             minutes={vitals.sittingMinutes}
@@ -150,9 +150,12 @@ export function VitalsPanel({
           />
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Standing share</span>
+        <div className="space-y-1.5">
+          <div className="flex items-start justify-between gap-2 text-xs">
+            <span className="text-muted-foreground">
+              Standing share, {formatMinutes(vitals.totalTrackedMinutes)} tracked,{" "}
+              {vitals.postureSwitches} {vitals.postureSwitches === 1 ? "switch" : "switches"}
+            </span>
             <span className="font-medium text-foreground">{vitals.standingSharePct}%</span>
           </div>
           <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -161,14 +164,9 @@ export function VitalsPanel({
               style={{ width: `${Math.min(100, vitals.standingSharePct)}%` }}
             />
           </div>
-          <p className="text-xs text-muted-foreground">
-            {formatMinutes(vitals.standingMinutes)} standing of{" "}
-            {formatMinutes(vitals.totalTrackedMinutes)} tracked, across{" "}
-            {vitals.postureSwitches} {vitals.postureSwitches === 1 ? "switch" : "switches"}
-          </p>
         </div>
 
-        <div className="space-y-2 pt-1 border-t border-border/40">
+        <div className="space-y-1 pt-1.5 border-t border-border/40">
           {notes.map((note, i) => {
             const Icon = NOTE_ICON[note.area]
             return (
@@ -181,7 +179,7 @@ export function VitalsPanel({
                 />
                 <p
                   className={cn(
-                    "text-xs",
+                    "text-xs leading-snug",
                     note.level === "watch" ? "text-amber-400" : "text-muted-foreground",
                   )}
                 >

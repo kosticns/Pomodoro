@@ -389,7 +389,7 @@ export const MobileTasksManager = () => {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header with Top-Level Tab Switcher */}
-      <div className="flex items-center justify-between p-4 border-b border-border/50 bg-background/95 backdrop-blur">
+      <div className="flex items-center justify-between p-3 border-b border-border/50 bg-background/95 backdrop-blur">
         <div className="flex items-center gap-1 bg-muted/30 rounded-lg p-1">
           <button
             onClick={() => setMainTab("tasks")}
@@ -573,7 +573,7 @@ export const MobileTasksManager = () => {
       </div>
 
       {/* Task List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {filteredTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <CheckSquare className="h-16 w-16 text-muted-foreground/30 mb-4" />
@@ -605,7 +605,7 @@ export const MobileTasksManager = () => {
                   isActive && "border-cyan-500/50 bg-cyan-500/5"
                 )}
               >
-                <CardContent className="p-3">
+                <CardContent className="p-2.5">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
@@ -622,7 +622,7 @@ export const MobileTasksManager = () => {
                         )}
                       </div>
                       
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         {/* Project Tag */}
                         <button
                           onClick={() => setFilterProject(filterProject === task.projectId ? null : task.projectId)}
@@ -750,7 +750,7 @@ export const MobileTasksManager = () => {
           </div>
 
           {/* Project List */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {filteredProjects.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <FolderOpen className="h-16 w-16 text-muted-foreground/30 mb-4" />
@@ -807,7 +807,7 @@ export const MobileTasksManager = () => {
                                 </h3>
                               </div>
                               
-                              <div className="flex items-center gap-2 flex-wrap">
+                              <div className="flex items-center gap-1.5 flex-wrap">
                                 {/* Status Badge */}
                                 <Badge
                                   variant="outline"
@@ -995,7 +995,7 @@ export const MobileTasksManager = () => {
           <DialogHeader>
             <DialogTitle>Edit Project</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 py-4">
             <div className="space-y-2">
               <Label htmlFor="edit-project-name">Project Name</Label>
               <Input
@@ -1100,7 +1100,7 @@ export const MobileTasksManager = () => {
           <DialogHeader>
             <DialogTitle>Add New Task</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 py-4">
             <div className="space-y-2">
               <Label htmlFor="task-name">Task Name</Label>
               <Input
@@ -1157,7 +1157,7 @@ export const MobileTasksManager = () => {
           <DialogHeader>
             <DialogTitle>Add New Project</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 py-4">
             <div className="space-y-2">
               <Label htmlFor="new-project-name">Project Name</Label>
               <Input
@@ -1186,7 +1186,7 @@ export const MobileTasksManager = () => {
           <DialogHeader>
             <DialogTitle>Edit Task</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 py-4">
             <div className="space-y-2">
               <Label htmlFor="edit-task-name">Task Name</Label>
               <Input
@@ -1318,7 +1318,7 @@ export const MobileTasksManager = () => {
           </div>
           
           {/* Task Card */}
-          <div className="p-5">
+          <div className="p-3">
             <div className="mb-4">
               {/* Project Badge */}
               {(() => {
@@ -1436,7 +1436,7 @@ export const MobileTasksManager = () => {
           </div>
           
           {/* Project Card */}
-          <div className="p-5">
+          <div className="p-3">
             <div className="mb-4">
               {/* Project Name */}
               <h3 className="text-xl font-bold text-foreground mb-2">{currentReviewProject.name}</h3>

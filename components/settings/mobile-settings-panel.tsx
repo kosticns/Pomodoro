@@ -306,49 +306,49 @@ export const MobileSettingsPanel = ({
   }
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-3 space-y-3">
       <h1 className="text-xl font-bold text-glow-secondary">Settings</h1>
 
       {/* Timer Durations */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Timer Durations</CardTitle>
+          <CardTitle className="text-sm">Timer Durations</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Focus Duration (minutes)</Label>
+        <CardContent className="grid grid-cols-2 gap-x-3 gap-y-2">
+          <div className="space-y-1">
+            <Label className="text-xs">Focus Duration (min)</Label>
             <Input
               type="number"
               value={settings.focusDuration}
               onChange={(e) => setSettings({ ...settings, focusDuration: Number(e.target.value) })}
             />
           </div>
-          <div className="space-y-2">
-            <Label>Short Break Duration (minutes)</Label>
+          <div className="space-y-1">
+            <Label className="text-xs">Short Break (min)</Label>
             <Input
               type="number"
               value={settings.shortBreakDuration}
               onChange={(e) => setSettings({ ...settings, shortBreakDuration: Number(e.target.value) })}
             />
           </div>
-          <div className="space-y-2">
-            <Label>Long Break Duration (minutes)</Label>
+          <div className="space-y-1">
+            <Label className="text-xs">Long Break (min)</Label>
             <Input
               type="number"
               value={settings.longBreakDuration}
               onChange={(e) => setSettings({ ...settings, longBreakDuration: Number(e.target.value) })}
             />
           </div>
-          <div className="space-y-2">
-            <Label>Cycles before long break</Label>
+          <div className="space-y-1">
+            <Label className="text-xs">Cycles before long break</Label>
             <Input
               type="number"
               value={settings.cyclesBeforeLongBreak}
               onChange={(e) => setSettings({ ...settings, cyclesBeforeLongBreak: Number(e.target.value) })}
             />
           </div>
-  <div className="space-y-2">
-  <Label>Workday Duration (hours)</Label>
+  <div className="space-y-1">
+  <Label className="text-xs">Workday (hours)</Label>
   <Input
   type="number"
   min="1"
@@ -357,8 +357,8 @@ export const MobileSettingsPanel = ({
   onChange={(e) => setSettings({ ...settings, workdayDuration: Number(e.target.value) })}
   />
   </div>
-  <div className="space-y-2">
-  <Label>Daily Pomodoro Goal</Label>
+  <div className="space-y-1">
+  <Label className="text-xs">Daily pomodoro goal</Label>
   <Input
   type="number"
   min="1"
@@ -366,17 +366,18 @@ export const MobileSettingsPanel = ({
   value={settings.dailyPomodoroGoal || 10}
   onChange={(e) => setSettings({ ...settings, dailyPomodoroGoal: Number(e.target.value) })}
   />
-  <p className="text-[10px] text-muted-foreground">8-10 = good day, 12-14 = very productive, 16+ = maximum</p>
   </div>
+  {/* Spans the grid: squeezed into one column it wrapped to three lines. */}
+  <p className="col-span-2 text-xs text-muted-foreground -mt-1">8-10 is a good day, 12-14 very productive, 16 or more is a maximum</p>
   </CardContent>
   </Card>
   
   {/* Standing Desk Reminder */}
   <Card>
   <CardHeader>
-  <CardTitle className="text-lg">Standing Desk</CardTitle>
+  <CardTitle className="text-sm">Standing Desk</CardTitle>
   </CardHeader>
-  <CardContent className="space-y-4">
+  <CardContent className="space-y-3">
   <div className="flex items-center justify-between">
   <div>
   <Label>Standing Reminders</Label>
@@ -388,7 +389,7 @@ export const MobileSettingsPanel = ({
   />
   </div>
   {settings.standingReminderEnabled !== false && (
-  <div className="space-y-2">
+  <div className="space-y-1">
   <Label>Switch Cadence (minutes)</Label>
   <Input
   type="number"
@@ -406,7 +407,7 @@ export const MobileSettingsPanel = ({
   {/* Behavior */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Behavior</CardTitle>
+          <CardTitle className="text-sm">Behavior</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
@@ -427,9 +428,9 @@ export const MobileSettingsPanel = ({
       {/* Workday Timer */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Workday Timer</CardTitle>
+          <CardTitle className="text-sm">Workday Timer</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {workdayTimer.isWorkdayActive ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -468,9 +469,9 @@ export const MobileSettingsPanel = ({
       {/* Sounds & Notifications */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Sounds & Notifications</CardTitle>
+          <CardTitle className="text-sm">Sounds & Notifications</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <Label>Sound Enabled</Label>
@@ -482,7 +483,7 @@ export const MobileSettingsPanel = ({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label>Volume ({Math.round(settings.soundVolume * 100)}%)</Label>
             <Input
               type="range"
@@ -496,7 +497,7 @@ export const MobileSettingsPanel = ({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label>Focus End Sound</Label>
             <div className="flex gap-2">
               <Select
@@ -520,7 +521,7 @@ export const MobileSettingsPanel = ({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label>Break End Sound</Label>
             <div className="flex gap-2">
               <Select
@@ -544,7 +545,7 @@ export const MobileSettingsPanel = ({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label>Start Sound</Label>
             <div className="flex gap-2">
               <Select
@@ -594,13 +595,13 @@ export const MobileSettingsPanel = ({
         <CardHeader>
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Export Report</CardTitle>
+            <CardTitle className="text-sm">Export Report</CardTitle>
           </div>
           <p className="text-xs text-muted-foreground">Generate a detailed productivity report</p>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {/* Report Type Selection */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label className="text-sm">Report Period</Label>
             <div className="grid grid-cols-3 gap-2">
               {(["daily", "weekly", "monthly"] as const).map((type) => (
@@ -665,11 +666,11 @@ export const MobileSettingsPanel = ({
         <CardHeader>
           <div className="flex items-center gap-2">
             <Download className="h-5 w-5 text-cyan-400" />
-            <CardTitle className="text-lg">Full Backup</CardTitle>
+            <CardTitle className="text-sm">Full Backup</CardTitle>
           </div>
           <p className="text-xs text-muted-foreground">Download or restore all your data</p>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {/* Export buttons */}
           <div>
             <p className="text-xs text-muted-foreground mb-2">Export</p>

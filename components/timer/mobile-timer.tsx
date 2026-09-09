@@ -422,9 +422,12 @@ export const MobileTimerComponent = ({
           definite parent height, which fights the column needing to grow so it
           can scroll; that conflict is what put the Start button under the nav.
           clamp gives a predictable ring at every viewport with no dependency
-          on the parent resolving a height. */}
+          on the parent resolving a height.
+          29vh, not 32: the vertical tightening pass freed space and the ring
+          grew straight into it, cutting nav clearance to 3px. The ring is the
+          elastic element, so it gives the margin back. */}
       <div className="shrink-0 flex items-center justify-center py-2">
-        <div className="relative w-[clamp(150px,32vh,260px)] max-w-full aspect-square">
+        <div className="relative w-[clamp(150px,29vh,260px)] max-w-full aspect-square">
           <div
             className={cn(
               "absolute inset-0 rounded-full blur-xl opacity-30",

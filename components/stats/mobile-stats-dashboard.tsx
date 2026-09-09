@@ -288,7 +288,7 @@ export const MobileStatsDashboard = ({
   const weeklyChartData = buildChartData(weeklyCoverageItems)
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-3 space-y-3">
       <h1 className="text-xl font-bold text-cyan-500">Statistics</h1>
 
       {/* Vitals summary. Compact here on purpose: the Breaks screen carries the
@@ -298,10 +298,10 @@ export const MobileStatsDashboard = ({
 
       {/* Time Progress Bars */}
       <Card className="bg-background/50 border-primary/30">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Today's Time Tracking</CardTitle>
+        <CardHeader className="pb-0">
+          <CardTitle className="text-sm">Today's Time Tracking</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {/* Workday Active Progress */}
           <div>
             <div className="flex justify-between items-center mb-2">
@@ -310,7 +310,7 @@ export const MobileStatsDashboard = ({
                 {workdayActiveTime} / {totalAvailableTime} min
               </span>
             </div>
-            <div className="w-full bg-background/80 rounded-full h-3 overflow-hidden border border-border/30">
+            <div className="w-full bg-background/80 rounded-full h-2 overflow-hidden border border-border/30">
               <div
                 className="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 transition-all duration-300"
                 style={{ width: `${Math.min(100, workdayActivePercentage)}%` }}
@@ -326,7 +326,7 @@ export const MobileStatsDashboard = ({
                 {totalWorkTime} / {totalAvailableTime} min
               </span>
             </div>
-            <div className="w-full bg-background/80 rounded-full h-3 overflow-hidden border border-border/30">
+            <div className="w-full bg-background/80 rounded-full h-2 overflow-hidden border border-border/30">
               <div
                 className="h-full bg-gradient-to-r from-yellow-500 to-yellow-400 transition-all duration-300"
                 style={{ width: `${Math.min(100, workTimePercentage)}%` }}
@@ -339,23 +339,23 @@ export const MobileStatsDashboard = ({
       {/* Break Summary */}
       <div className="grid grid-cols-2 gap-3">
         <Card className="bg-background/50 border-primary/30">
-          <CardContent className="p-4">
+          <CardContent className="p-3">
             <div className="flex items-center gap-2 mb-2">
               <Coffee className="h-4 w-4 text-cyan-500" />
               <div className="text-xs text-muted-foreground">Short Breaks</div>
             </div>
-            <div className="text-2xl font-bold text-foreground">{todayStat.shortBreakCount}</div>
+            <div className="text-xl leading-tight font-bold text-foreground">{todayStat.shortBreakCount}</div>
             <div className="text-xs text-muted-foreground mt-1">{todayStat.shortBreakTime} min</div>
           </CardContent>
         </Card>
 
         <Card className="bg-background/50 border-primary/30">
-          <CardContent className="p-4">
+          <CardContent className="p-3">
             <div className="flex items-center gap-2 mb-2">
               <Timer className="h-4 w-4 text-yellow-500" />
               <div className="text-xs text-muted-foreground">Long Breaks</div>
             </div>
-            <div className="text-2xl font-bold text-foreground">{todayStat.longBreakCount}</div>
+            <div className="text-xl leading-tight font-bold text-foreground">{todayStat.longBreakCount}</div>
             <div className="text-xs text-muted-foreground mt-1">{todayStat.longBreakTime} min</div>
           </CardContent>
         </Card>
@@ -363,7 +363,7 @@ export const MobileStatsDashboard = ({
 
       {/* Weekly Pomodoro Chart */}
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-0">
           <CardTitle className="text-lg">This Week</CardTitle>
           <p className="text-xs text-muted-foreground">Daily progress</p>
         </CardHeader>
@@ -374,7 +374,7 @@ export const MobileStatsDashboard = ({
 
       {/* Week-to-Week Progress */}
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-0">
           <CardTitle className="text-lg">Weekly Trend</CardTitle>
           <p className="text-xs text-muted-foreground">Last 8 weeks</p>
         </CardHeader>
@@ -396,7 +396,7 @@ export const MobileStatsDashboard = ({
 
       {/* Month-to-Month Progress */}
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-0">
           <CardTitle className="text-lg">Monthly Trend</CardTitle>
           <p className="text-xs text-muted-foreground">Last 6 months</p>
         </CardHeader>
@@ -432,7 +432,7 @@ export const MobileStatsDashboard = ({
         if (recentStats.length === 0) {
           return (
             <Card className="bg-background/50 border-primary/30">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-0">
                 <div className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-yellow-500" />
                   <CardTitle className="text-lg">Best Days</CardTitle>
@@ -460,7 +460,7 @@ export const MobileStatsDashboard = ({
 
         return (
           <Card className="bg-background/50 border-primary/30">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-0">
               <div className="flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-yellow-500" />
                 <CardTitle className="text-lg">Best Days</CardTitle>
@@ -483,7 +483,7 @@ export const MobileStatsDashboard = ({
                   <div
                     key={dayStat.date}
                     className={cn(
-                      "relative p-4 rounded-lg border bg-gradient-to-r transition-all hover:scale-[1.01]",
+                      "relative p-3 rounded-lg border bg-gradient-to-r transition-all hover:scale-[1.01]",
                       medalColors[index] || "from-muted/20 to-muted/10 border-border/50",
                     )}
                   >
@@ -545,14 +545,14 @@ export const MobileStatsDashboard = ({
 
       {/* Today's Project Coverage */}
       <Card className="border-cyan-500/30 bg-card/50">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-0">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
               Today
             </CardTitle>
             <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-cyan-500">{todayTotalPomodoros}</span>
+              <span className="text-xl leading-tight font-bold text-cyan-500">{todayTotalPomodoros}</span>
               <span className="text-xs text-muted-foreground">pomodoros</span>
             </div>
           </div>
@@ -564,7 +564,7 @@ export const MobileStatsDashboard = ({
               <p className="text-sm text-muted-foreground mt-2">No activity yet</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               <div className="flex justify-center">
                 <CustomPieChart data={dailyChartData} compact hideLegend centerTotal={todayTotalPomodoros} />
               </div>
@@ -587,11 +587,11 @@ export const MobileStatsDashboard = ({
 
       {/* Weekly Project Coverage */}
       <Card className="border-primary/30 bg-card/50">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-0">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">This Week</CardTitle>
             <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-primary">{weeklyTotalPomodoros}</span>
+              <span className="text-xl leading-tight font-bold text-primary">{weeklyTotalPomodoros}</span>
               <span className="text-xs text-muted-foreground">pomodoros</span>
             </div>
           </div>
@@ -606,7 +606,7 @@ export const MobileStatsDashboard = ({
               <p className="text-sm text-muted-foreground mt-2">No activity yet</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               <div className="flex justify-center">
                 <CustomPieChart data={weeklyChartData} compact hideLegend centerTotal={weeklyTotalPomodoros} />
               </div>
