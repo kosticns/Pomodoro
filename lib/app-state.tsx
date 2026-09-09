@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect } from "react"
 import { useLocalStorage } from "@/hooks/use-local-storage"
 import type { Settings, Project, Task, Note, DailyStat } from "./types"
 import { DEFAULT_STANDING_CADENCE_MINUTES, needsCadenceMigration } from "./posture"
+import { DEFAULT_DAY_START_HOUR } from "./day-start"
 
 /**
  * The app's persisted domain state, in one place.
@@ -59,6 +60,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dailyPomodoroGoal: 10,
   standingReminderEnabled: true,
   standingCadence: DEFAULT_STANDING_CADENCE_MINUTES,
+  dayStartHour: DEFAULT_DAY_START_HOUR,
 }
 
 const DEFAULT_PROJECTS: Project[] = [

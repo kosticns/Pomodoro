@@ -80,8 +80,10 @@ import { getLocalDateStr, formatRelativeTime, generateTone, playSound } from "@/
 import { isWorkdayForToday } from "@/lib/workday"
 import { recordPostureHeld } from "@/lib/daily-stat"
 import { standingCadenceOf, shouldRemindPosture } from "@/lib/posture"
+import { shouldPromptNewDay, localHour, DEFAULT_DAY_START_HOUR, formatClock, greeting } from "@/lib/day-start"
 import { buildBackupJSON, buildBackupCSV, backupFilename } from "@/lib/backup"
 import { AppStateProvider, useAppState } from "@/lib/app-state"
+import { useLocalStorage } from "@/hooks/use-local-storage"
 import { useNotifications } from "@/hooks/use-notifications"
 import { useWorkdayTimer } from "@/hooks/use-workday-timer"
 import { CustomBarChart } from "@/components/charts/custom-bar-chart"
@@ -124,6 +126,9 @@ const PomodoroApp = () => {
 
   // Backup modal state
   const [showBackupModal, setShowBackupModal] = useState(false)
+  // Which calendar day the start-of-day prompt was last handled for, saved so
+  // it survives a reload and cannot reappear later the same day.
+  const [lastPromptedDate, setLastPromptedDate] = useLocalStorage<string>("lastDayPromptDate", "")
 
   // Backup building lives in lib/backup.ts. It used to be duplicated here and
   // in the Settings panel, and the two copies drifted.
@@ -167,8 +172,11 @@ const PomodoroApp = () => {
     } else if (format === "csv") {
       downloadBackupCSV()
     }
+    // Record the day whichever button was pressed. Skipping is a decision, and
+    // re-asking after it would make the prompt feel broken.
+    setLastPromptedDate(getLocalDateStr())
     setShowBackupModal(false)
-  }, [downloadBackupJSON, downloadBackupCSV])
+  }, [downloadBackupJSON, downloadBackupCSV, setLastPromptedDate])
 
   // Notify once per stretch when it is time to change posture.
   //
@@ -189,6 +197,32 @@ const PomodoroApp = () => {
     },
     [setStats],
   )
+
+  // Start-of-day prompt.
+  //
+  // Polls rather than scheduling a fire at 08:00, because the app is usually
+  // closed then and a scheduled fire would simply be missed. This covers both
+  // "opened for the first time this morning" and "was left open when the hour
+  // passed". The clock is read inside the check, never during render, for the
+  // same reason the workday rollover has to.
+  useEffect(() => {
+    const check = () => {
+      const now = new Date()
+      if (
+        shouldPromptNewDay({
+          lastPromptedDate,
+          today: getLocalDateStr(now),
+          currentHour: localHour(now),
+          startHour: settings.dayStartHour ?? DEFAULT_DAY_START_HOUR,
+        })
+      ) {
+        setShowBackupModal(true)
+      }
+    }
+    check()
+    const id = setInterval(check, 30_000)
+    return () => clearInterval(id)
+  }, [lastPromptedDate, settings.dayStartHour])
 
   // Initialize workday timer
   const workdayTimer = useWorkdayTimer(settings, recordPosture)
@@ -533,8 +567,10 @@ const skipSession = useCallback(() => {
       // getLocalDateStr() is read HERE, when the user acts, not during render.
       const workdayStartedToday = isWorkdayForToday(workdayTimer.workdayTimer, getLocalDateStr())
 
+      // The backup prompt used to be raised here, which made saving a side
+      // effect of starting work. It is now the start-of-day prompt above, so
+      // this only starts the workday.
       if (sessionType === "focus" && !workdayStartedToday) {
-        setShowBackupModal(true)
         workdayTimer.startWorkdayTimer()
       }
 
@@ -814,16 +850,20 @@ const skipSession = useCallback(() => {
         </>
       )}
       
-      {/* Daily Backup Modal */}
+      {/* Start-of-day prompt. Appears once per day from the configured hour,
+          not on pressing play. JSON is the primary action because it is the
+          only format that restores; CSV is for reading in a spreadsheet. */}
       <Dialog open={showBackupModal} onOpenChange={setShowBackupModal}>
         <DialogContent className="w-[90vw] max-w-sm border-primary/30 bg-background/95 backdrop-blur-sm">
           <DialogHeader className="text-center pb-2">
             <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center mb-3">
               <Download className="h-6 w-6 text-primary" />
             </div>
-            <DialogTitle className="text-lg font-bold text-primary">Daily Backup</DialogTitle>
+            <DialogTitle className="text-lg font-bold text-primary">
+              {greeting()}, it is {formatClock()}
+            </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              Save your progress before starting today&apos;s work
+              A new day. Save yesterday&apos;s data, then start your first pomodoro.
             </DialogDescription>
           </DialogHeader>
           
@@ -831,6 +871,7 @@ const skipSession = useCallback(() => {
             <Button
               onClick={() => handleBackupAndStart("json")}
               variant="outline"
+              aria-label="Download JSON backup and start the day"
               className="flex flex-col items-center gap-2 h-auto py-4 border-primary/30 hover:bg-primary/10 hover:border-primary"
             >
               <div className="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
@@ -838,7 +879,7 @@ const skipSession = useCallback(() => {
               </div>
               <div className="text-center">
                 <div className="font-medium text-foreground">JSON</div>
-                <div className="text-[10px] text-muted-foreground">Full backup</div>
+                <div className="text-xs text-muted-foreground">Full backup</div>
               </div>
             </Button>
             
@@ -852,7 +893,7 @@ const skipSession = useCallback(() => {
               </div>
               <div className="text-center">
                 <div className="font-medium text-foreground">CSV</div>
-                <div className="text-[10px] text-muted-foreground">Spreadsheet</div>
+                <div className="text-xs text-muted-foreground">Spreadsheet</div>
               </div>
             </Button>
           </div>
@@ -862,7 +903,7 @@ const skipSession = useCallback(() => {
             variant="ghost"
             className="w-full text-muted-foreground hover:text-foreground"
           >
-            Skip for today
+            Skip today
           </Button>
         </DialogContent>
       </Dialog>

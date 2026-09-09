@@ -2,6 +2,7 @@
 
 import { useAppState } from "@/lib/app-state"
 import { standingCadenceOf } from "@/lib/posture"
+import { DEFAULT_DAY_START_HOUR } from "@/lib/day-start"
 import { buildBackupJSON, buildBackupCSV, backupFilename } from "@/lib/backup"
 import React, { useState, useRef } from "react"
 import {
@@ -367,8 +368,18 @@ export const MobileSettingsPanel = ({
   onChange={(e) => setSettings({ ...settings, dailyPomodoroGoal: Number(e.target.value) })}
   />
   </div>
+  <div className="space-y-1">
+  <Label className="text-xs">Day starts at (hour)</Label>
+  <Input
+  type="number"
+  min="0"
+  max="23"
+  value={settings.dayStartHour ?? DEFAULT_DAY_START_HOUR}
+  onChange={(e) => setSettings({ ...settings, dayStartHour: Number(e.target.value) })}
+  />
+  </div>
   {/* Spans the grid: squeezed into one column it wrapped to three lines. */}
-  <p className="col-span-2 text-xs text-muted-foreground -mt-1">8-10 is a good day, 12-14 very productive, 16 or more is a maximum</p>
+  <p className="col-span-2 text-xs text-muted-foreground -mt-1">8-10 pomodoros is a good day, 12-14 very productive. The start-of-day prompt appears once per day from the hour above.</p>
   </CardContent>
   </Card>
   

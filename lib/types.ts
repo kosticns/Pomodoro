@@ -50,6 +50,10 @@ export interface Settings {
   dailyPomodoroGoal: number // target pomodoros per day
   standingReminderEnabled: boolean
   standingCadence: number // in minutes - how often to switch between sit/stand
+  // Hour of the local day, 0-23, from which the start-of-day prompt may
+  // appear. Optional so existing stored settings do not read as 0, which
+  // would prompt at midnight.
+  dayStartHour?: number
   }
 export interface DailyStat {
   date: string
