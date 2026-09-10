@@ -80,7 +80,8 @@ import { getLocalDateStr, formatRelativeTime, generateTone, playSound } from "@/
 import { isWorkdayForToday } from "@/lib/workday"
 import { recordPostureHeld } from "@/lib/daily-stat"
 import { standingCadenceOf, shouldRemindPosture } from "@/lib/posture"
-import { shouldPromptNewDay, localHour, DEFAULT_DAY_START_HOUR, formatClock, greeting } from "@/lib/day-start"
+import { shouldPromptNewDay, localHour, DEFAULT_DAY_START_HOUR, greeting } from "@/lib/day-start"
+import { shouldRunDayPlan } from "@/lib/day-plan"
 import { buildBackupJSON, buildBackupCSV, backupFilename } from "@/lib/backup"
 import { AppStateProvider, useAppState } from "@/lib/app-state"
 import { useLocalStorage } from "@/hooks/use-local-storage"
@@ -92,6 +93,7 @@ import { CustomPieChart } from "@/components/charts/custom-pie-chart"
 import { MobileTaskSelector } from "@/components/timer/mobile-task-selector"
 import { MobileTimerComponent } from "@/components/timer/mobile-timer"
 import { MobileTasksManager } from "@/components/tasks/mobile-tasks-manager"
+import { DayPlanWizard } from "@/components/day-plan/day-plan-wizard"
 import { MobileBreaksPanel } from "@/components/breaks/mobile-breaks-panel"
 import { MobileStatsDashboard } from "@/components/stats/mobile-stats-dashboard"
 import { WorkdayTimelineSlider } from "@/components/workday/workday-timeline-slider"
@@ -126,6 +128,10 @@ const PomodoroApp = () => {
 
   // Backup modal state
   const [showBackupModal, setShowBackupModal] = useState(false)
+  // The prioritisation wizard, opened by the start-of-day prompt and by the
+  // Tasks tab. Kept here rather than in AppState because it is view state, and
+  // AppState re-renders every consumer when it changes.
+  const [isDayPlanOpen, setIsDayPlanOpen] = useState(false)
   // Which calendar day the start-of-day prompt was last handled for, saved so
   // it survives a reload and cannot reappear later the same day.
   const [lastPromptedDate, setLastPromptedDate] = useLocalStorage<string>("lastDayPromptDate", "")
@@ -176,7 +182,12 @@ const PomodoroApp = () => {
     // re-asking after it would make the prompt feel broken.
     setLastPromptedDate(getLocalDateStr())
     setShowBackupModal(false)
-  }, [downloadBackupJSON, downloadBackupCSV, setLastPromptedDate])
+    // Then plan the day. Backing up yesterday is the bookkeeping; deciding what
+    // to work on is the part that makes the morning useful, so the two run back
+    // to back. Skipped entirely when there is no unfinished work, since an
+    // empty wizard every morning would just be friction.
+    if (shouldRunDayPlan(tasks)) setIsDayPlanOpen(true)
+  }, [downloadBackupJSON, downloadBackupCSV, setLastPromptedDate, tasks])
 
   // Notify once per stretch when it is time to change posture.
   //
@@ -734,6 +745,7 @@ const skipSession = useCallback(() => {
         return (
   <MobileTasksManager
   key="tasks-view"
+  onStartDayPlan={() => setIsDayPlanOpen(true)}
   />
         )
       case "breaks":
@@ -859,9 +871,7 @@ const skipSession = useCallback(() => {
             <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center mb-3">
               <Download className="h-6 w-6 text-primary" />
             </div>
-            <DialogTitle className="text-lg font-bold text-primary">
-              {greeting()}, it is {formatClock()}
-            </DialogTitle>
+            <DialogTitle className="text-lg font-bold text-primary">{greeting()}</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
               A new day. Save yesterday&apos;s data, then start your first pomodoro.
             </DialogDescription>
@@ -907,6 +917,10 @@ const skipSession = useCallback(() => {
           </Button>
         </DialogContent>
       </Dialog>
+
+      {/* Prioritisation, straight after the start-of-day prompt. Also reachable
+          from the Tasks tab, so there is one triage flow rather than two. */}
+      <DayPlanWizard open={isDayPlanOpen} onOpenChange={setIsDayPlanOpen} />
     </div>
   )
 }

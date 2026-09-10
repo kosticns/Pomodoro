@@ -1,12 +1,33 @@
 # Ideas
 
+## Done 10 Sep 2026
+
+- **The morning now ends with a decision.** `DayPlanWizard` runs straight after
+  the start-of-day prompt: it walks every unfinished task into Today, Later,
+  Done or Skip, then asks which of the Today tasks to start. That task becomes
+  the active task, so the Timer is already pointed at it.
+
+  This **replaced** the Tasks tab's Daily Review rather than sitting beside it.
+  The old flow set each task's status one at a time and then stopped, so you
+  finished it no better off: the active task was still whatever it was
+  yesterday. Its "Daily" button is now "Plan day" and opens the same wizard,
+  so triage behaves identically whichever way you reach it.
+
+  One thing worth knowing if you extend it: the queue is snapshotted when the
+  wizard opens. Deriving it live from `tasks` looks cleaner and is a bug,
+  because triaging a task to Done removes it from an unfinished-tasks filter
+  and the list shrinks under the index. The old review worked around exactly
+  that by not advancing the index after Done.
+
+- **The current time is gone from the UI**, on your call. The workday card still
+  shows when the day started, which is a fact about the day rather than a clock.
+
 ## Done 9 Sep 2026
 
-- **Start-of-day prompt and a clock.** The backup modal was attached to
-  pressing play; it is now once per day from a set hour (default 8), and the
-  workday card shows the current time and when the day started. Not a scheduled
-  08:00 fire, because the app is usually closed then; it prompts on first sight
-  of a new day past the hour.
+- **Start-of-day prompt.** The backup modal was attached to pressing play; it is
+  now once per day from a set hour (default 8). Not a scheduled 08:00 fire,
+  because the app is usually closed then; it prompts on first sight of a new day
+  past the hour.
 
 - **Item 1, the posture reminder now notifies.** Testing caught that marking a
   stretch "notified" before sending lost the reminder whenever permission was

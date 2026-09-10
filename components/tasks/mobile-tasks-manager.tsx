@@ -32,7 +32,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { TaskStatus, ProjectStatus, Project, Note, Task } from "@/lib/types"
 
-export const MobileTasksManager = () => {
+export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => void }) => {
   const { projects, setProjects, tasks, setTasks, activeTask, setActiveTask, notes } = useAppState()
   // Top-level tab: Tasks or Projects
   const [mainTab, setMainTab] = useState<"tasks" | "projects">("tasks")
@@ -76,45 +76,12 @@ export const MobileTasksManager = () => {
   const [viewingNotesTask, setViewingNotesTask] = useState<Task | null>(null)
   const getTaskNotes = (taskId: string) => notes.filter((n) => n.taskId === taskId).sort((a, b) => b.createdAt - a.createdAt)
   
-  // Daily review state
-  const [isDailyReviewOpen, setIsDailyReviewOpen] = useState(false)
-  const [dailyReviewIndex, setDailyReviewIndex] = useState(0)
+  // The per-task Daily Review used to live here. It set each task's status one
+  // at a time and then stopped, never choosing what to work on, so it left the
+  // active task as whatever it was the day before. DayPlanWizard replaces it
+  // and ends by activating the chosen task; the button above opens that.
   const incompleteTasks = tasks.filter((t) => t.status !== "Done")
-  const currentReviewTask = incompleteTasks[dailyReviewIndex]
-  
-  const startDailyReview = () => {
-  setDailyReviewIndex(0)
-  setIsDailyReviewOpen(true)
-  }
-  
-  const handleDailyReviewAction = (action: "To Do" | "In Progress" | "Done" | "Skip") => {
-  if (currentReviewTask && action !== "Skip") {
-  setTasks((prev) =>
-  prev.map((t) =>
-  t.id === currentReviewTask.id ? { ...t, status: action } : t
-  )
-  )
-  }
-  
-  // When marking as Done, the task will be removed from incompleteTasks array,
-  // so we DON'T advance the index (the array shrinks, next task slides into current position)
-  // For other actions (To Do, In Progress, Skip), the task stays in the array, so we advance
-  if (action === "Done") {
-  // Check if this was the last task
-  if (incompleteTasks.length <= 1) {
-  setIsDailyReviewOpen(false)
-  }
-  // Otherwise, don't change index - next task will slide into this position
-  } else {
-  // Move to next task or close if done
-  if (dailyReviewIndex < incompleteTasks.length - 1) {
-  setDailyReviewIndex(dailyReviewIndex + 1)
-  } else {
-  setIsDailyReviewOpen(false)
-  }
-  }
-  }
-  
+
   // Project Daily review state
   const [isProjectDailyReviewOpen, setIsProjectDailyReviewOpen] = useState(false)
   const [projectDailyReviewIndex, setProjectDailyReviewIndex] = useState(0)
@@ -417,16 +384,17 @@ export const MobileTasksManager = () => {
         
         {mainTab === "tasks" ? (
           <div className="flex items-center gap-2">
-            {/* Daily Review Button */}
+            {/* Opens the same prioritisation wizard the morning prompt runs,
+                so triage behaves identically whichever way you reach it. */}
             <Button
               variant="outline"
               size="sm"
-              onClick={startDailyReview}
+              onClick={onStartDayPlan}
               disabled={incompleteTasks.length === 0}
               className="h-9 px-3 border-cyan-500/30 hover:bg-cyan-500/10 hover:border-cyan-400"
             >
               <Sunrise className="h-4 w-4 mr-1.5 text-cyan-400" />
-              <span className="text-sm">Daily</span>
+              <span className="text-sm">Plan day</span>
             </Button>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[140px] h-9 bg-background/50 border-primary/30">
@@ -1290,124 +1258,6 @@ export const MobileTasksManager = () => {
           Close
         </Button>
       </DialogFooter>
-    </DialogContent>
-  </Dialog>
-  
-  {/* Daily Review Dialog */}
-  <Dialog open={isDailyReviewOpen} onOpenChange={setIsDailyReviewOpen}>
-    <DialogContent className="w-[95vw] max-w-md border-cyan-500/30 bg-background/95 backdrop-blur-sm p-0 overflow-hidden">
-      {currentReviewTask ? (
-        <>
-          {/* Progress Header */}
-          <div className="px-5 pt-5 pb-3 border-b border-border/30">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Sunrise className="h-5 w-5 text-cyan-400" />
-                <span className="font-semibold text-foreground">Daily Review</span>
-              </div>
-              <span className="text-sm text-muted-foreground">
-                {dailyReviewIndex + 1} of {incompleteTasks.length}
-              </span>
-            </div>
-            <div className="h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-cyan-500 to-primary rounded-full transition-all duration-300"
-                style={{ width: `${((dailyReviewIndex + 1) / incompleteTasks.length) * 100}%` }}
-              />
-            </div>
-          </div>
-          
-          {/* Task Card */}
-          <div className="p-3">
-            <div className="mb-4">
-              {/* Project Badge */}
-              {(() => {
-                const project = projects.find((p) => p.id === currentReviewTask.projectId)
-                return project ? (
-                  <Badge variant="outline" className="mb-2 text-xs border-primary/30">
-                    <FolderOpen className="h-3 w-3 mr-1" />
-                    {project.name}
-                  </Badge>
-                ) : null
-              })()}
-              
-              {/* Task Name */}
-              <h3 className="text-xl font-bold text-foreground mb-2">{currentReviewTask.name}</h3>
-              
-              {/* Task Meta */}
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Timer className="h-4 w-4" />
-                  {currentReviewTask.completedPomodoros} pomodoros
-                </span>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-xs",
-                    currentReviewTask.status === "In Progress" && "border-cyan-500/50 text-cyan-500",
-                    currentReviewTask.status === "To Do" && "border-muted-foreground/50 text-muted-foreground",
-                  )}
-                >
-                  {currentReviewTask.status}
-                </Badge>
-              </div>
-            </div>
-            
-            {/* Status Question */}
-            <p className="text-sm text-muted-foreground mb-4">What&apos;s the status of this task?</p>
-            
-            {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                onClick={() => handleDailyReviewAction("To Do")}
-                className="h-14 flex flex-col items-center gap-1 border-muted-foreground/30 hover:bg-muted-foreground/10"
-              >
-                <Circle className="h-5 w-5 text-muted-foreground" />
-                <span className="text-xs">To Do</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleDailyReviewAction("In Progress")}
-                className="h-14 flex flex-col items-center gap-1 border-cyan-500/30 hover:bg-cyan-500/10"
-              >
-                <Play className="h-5 w-5 text-cyan-400" />
-                <span className="text-xs">In Progress</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleDailyReviewAction("Done")}
-                className="h-14 flex flex-col items-center gap-1 border-emerald-500/30 hover:bg-emerald-500/10"
-              >
-                <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                <span className="text-xs">Done</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleDailyReviewAction("Skip")}
-                className="h-14 flex flex-col items-center gap-1 border-yellow-500/30 hover:bg-yellow-500/10"
-              >
-                <SkipForward className="h-5 w-5 text-yellow-400" />
-                <span className="text-xs">Skip</span>
-              </Button>
-            </div>
-          </div>
-        </>
-      ) : (
-        /* Completion Screen */
-        <div className="p-8 text-center">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="h-8 w-8 text-emerald-400" />
-          </div>
-          <h3 className="text-xl font-bold text-foreground mb-2">Daily Review Complete</h3>
-          <p className="text-sm text-muted-foreground mb-6">
-            You&apos;ve reviewed all {incompleteTasks.length} tasks. Have a productive day!
-          </p>
-          <Button onClick={() => setIsDailyReviewOpen(false)} className="w-full">
-            Close
-          </Button>
-        </div>
-      )}
     </DialogContent>
   </Dialog>
   

@@ -50,15 +50,6 @@ export const MobileTimerComponent = ({
   workdayTimer: ReturnType<typeof useWorkdayTimer>
 }) => {
   const { settings, tasks, setTasks, projects, setProjects, activeTask, setActiveTask, stats, setStats, notes, setNotes } = useAppState()
-  // Ticks once a minute purely so the clock re-renders. Per-second would
-  // re-render this whole screen 60x more often for no visible gain, since the
-  // clock only shows hours and minutes.
-  const [nowTick, setNowTick] = useState(() => Date.now())
-  useEffect(() => {
-    const id = setInterval(() => setNowTick(Date.now()), 30_000)
-    return () => clearInterval(id)
-  }, [])
-
   const durations = useMemo(
     () => ({
       focus: settings.focusDuration * 60,
@@ -290,12 +281,14 @@ export const MobileTimerComponent = ({
                   <div className="flex items-baseline gap-2 mb-1">
                     <div className="flex items-baseline gap-2">
                       <div className="text-xs font-semibold text-cyan-400 tracking-wider">Workday Active</div>
-                      <span className="text-xs text-muted-foreground font-mono">
-                        {formatClock(nowTick)}
-                        {workdayTimer.workdayTimer.startTime
-                          ? `, since ${formatClock(workdayTimer.workdayTimer.startTime)}`
-                          : ""}
-                      </span>
+                      {/* When the day started, which is a fact about the day.
+                          The current time is deliberately not shown: the phone
+                          already has a clock. */}
+                      {workdayTimer.workdayTimer.startTime ? (
+                        <span className="text-xs text-muted-foreground font-mono">
+                          since {formatClock(workdayTimer.workdayTimer.startTime)}
+                        </span>
+                      ) : null}
                     </div>
                     <div className="text-xs text-foreground/50 font-mono">
                       {workdayTimer.workdayProgress.toFixed(0)}% complete
@@ -325,12 +318,7 @@ export const MobileTimerComponent = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div>
-                    <div className="flex items-baseline gap-2">
                     <div className="text-sm font-bold text-foreground tracking-wider">Workday Timer</div>
-                    {/* A live clock. The app now decides when a new day starts,
-                        so the time it is working from should be visible. */}
-                    <span className="text-xs text-muted-foreground font-mono">{formatClock(nowTick)}</span>
-                  </div>
                     <div className="text-xs text-foreground/60 font-mono">Ready to start</div>
                   </div>
                 </div>
