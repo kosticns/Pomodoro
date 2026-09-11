@@ -66,8 +66,18 @@ done
 # kostic.design carries live iCloud mail. Nothing here touches DNS, but a
 # publish is a good moment to notice if something else broke it.
 step "mail records on kostic.design (should be untouched)"
-MX=$(dig +short kostic.design MX | wc -l | tr -d ' ')
-[ "$MX" -ge 2 ] || fail "expected 2+ MX records on kostic.design, found $MX"
+# Retried, because a single lookup can come back empty on a transient resolver
+# hiccup and this check has already cried wolf once: it aborted a good publish
+# claiming 0 MX records while every other query returned both iCloud records.
+# A false "your email is broken" is worse than no check, so only a domain that
+# looks empty on every attempt is treated as a real failure.
+MX=0
+for _ in 1 2 3; do
+  MX=$(dig +short kostic.design MX | wc -l | tr -d ' ')
+  [ "$MX" -ge 2 ] && break
+  sleep 2
+done
+[ "$MX" -ge 2 ] || fail "expected 2+ MX records on kostic.design, found $MX after 3 attempts"
 dig +short kostic.design MX | sed 's/^/  /'
 
 printf '\nPUBLISHED: https://%s\n' "$DOMAIN"
