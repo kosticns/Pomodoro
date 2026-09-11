@@ -126,7 +126,9 @@ export const MobileStatsDashboard = ({
       const total = weekStats.reduce((sum, s) => sum + s.totalPomodoros, 0)
       
       // Label: "W1", "W2", etc. or date range for clarity
-      const label = i === 0 ? "This" : i === 1 ? "Last" : `W-${i}`
+      // "Now" rather than "This"/"Last": eight labels share the card width, and
+      // the two four-letter words sat flush against each other and read as one.
+      const label = i === 0 ? "Now" : `W-${i}`
       weeks.push({ label, total })
     }
     return weeks

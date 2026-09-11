@@ -32,8 +32,16 @@ export const CustomBarChart = ({
   const gapWidth = barWidth
 
   return (
-    <div ref={containerRef} className="w-full relative" style={{ height: `${height}px` }}>
-      <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+    // `height` sizes the PLOT AREA, not the whole component.
+    //
+    // It used to be the outer div's height while the svg took 100% of it and
+    // the labels and legend rendered after, so both spilled 48px outside the
+    // box and painted over whatever came next. In Stats that was the following
+    // card's title. Nothing clipped it because the card does not hide overflow,
+    // so it read as three separate overlap bugs rather than one.
+    <div ref={containerRef} className="w-full relative">
+      <div className="w-full" style={{ height: `${height}px` }}>
+        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
         {/* Grid lines */}
         {[0, 25, 50, 75, 100].map((y) => (
           <line
@@ -90,7 +98,8 @@ export const CustomBarChart = ({
             )
           })
         })}
-      </svg>
+        </svg>
+      </div>
 
       {hoveredBar && (
         <div
@@ -109,10 +118,26 @@ export const CustomBarChart = ({
         </div>
       )}
 
-      {/* Labels */}
-      <div className="flex justify-around mt-2 text-xs text-muted-foreground">
+      {/* Labels, centred on their bar group using the same maths as the bars.
+          justify-around only approximated it, and with eight narrow slices it
+          broke "W-7" across two lines and ran "Last" into "This".
+
+          The display font is wide: a three-character label sets at ~37px, so
+          eight of them fill a phone-width card edge to edge and read as one
+          run. Past six labels the type steps down a size to buy the gaps back. */}
+      <div
+        className={`relative mt-2 h-4 text-muted-foreground ${
+          data.labels.length > 6 ? "text-[10px]" : "text-xs"
+        }`}
+      >
         {data.labels.map((label, i) => (
-          <span key={i}>{label}</span>
+          <span
+            key={i}
+            className="absolute -translate-x-1/2 whitespace-nowrap"
+            style={{ left: `${gapWidth + i * (groupWidth + gapWidth) + groupWidth / 2}%` }}
+          >
+            {label}
+          </span>
         ))}
       </div>
 
