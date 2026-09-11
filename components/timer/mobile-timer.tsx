@@ -410,18 +410,12 @@ export const MobileTimerComponent = ({
         <MobileTaskSelector />
       </div>
 
-  {/* Break streak warning - clickable to show options */}
-  {accumulatedBreakTime > 0 && sessionType === "focus" && !isTakingAccumulatedBreak && (
-  <div 
-  onClick={() => setShowBreakOptionsDialog(true)}
-  className="flex items-center justify-center gap-1.5 mb-1 cursor-pointer hover:opacity-80 transition-opacity"
-  >
-  <Coffee className="h-3 w-3 text-amber-400" />
-  <span className="text-[10px] text-amber-400 underline underline-offset-2">
-  {accumulatedBreakTime}m of break time saved
-  </span>
-  </div>
-  )}
+      {/* Saved break time had TWO controls here: this spot carried a 10px
+          underlined "{n}m of break time saved" link, and the "Use Break Time"
+          button below the controls opened the very same dialog. One is enough,
+          so the button stays: it names the action, it is a real 36px target
+          rather than 10px text, and it sits with the other actions. Dropping
+          the link also gives the ring back the space it was squeezed out of. */}
 
       {/* Timer Circle - Smaller size to fit screen better */}
       {/* The ring is the only flexible element on this screen, so it absorbs
