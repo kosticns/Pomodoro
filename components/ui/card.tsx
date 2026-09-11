@@ -2,6 +2,14 @@ import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
+/**
+ * Card owns the VERTICAL padding (py-4); CardContent owns the horizontal (px-4).
+ *
+ * So give CardContent `px-*`, never `p-*`. An all-round `p-4` adds a second
+ * 16px top and bottom on top of the card's own, and 21 call sites had done
+ * exactly that, which is where the dead space at the top and bottom of every
+ * card came from.
+ */
 function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div

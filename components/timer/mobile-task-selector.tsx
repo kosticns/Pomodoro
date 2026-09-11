@@ -162,7 +162,7 @@ export const MobileTaskSelector = () => {
                       )}
                       onClick={() => handleSetActiveTask(task)}
                     >
-                      <CardContent className="p-4">
+                      <CardContent className="px-4">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">

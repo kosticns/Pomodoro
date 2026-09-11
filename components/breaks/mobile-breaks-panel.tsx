@@ -119,7 +119,7 @@ export const MobileBreaksPanel = () => {
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {/* Well-being Score Card */}
         <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-cyan-500/5">
-          <CardContent className="p-3">
+          <CardContent className="px-3">
             {/* Info for accumulated break time */}
             {todayAccumulatedBreakTime > 0 && (
               <div className="flex items-center gap-1.5 mb-3">
@@ -198,7 +198,7 @@ export const MobileBreaksPanel = () => {
             the same thing in a third of the height and reads better, because
             the two are now actually side by side. */}
         <Card className="border-secondary/30">
-          <CardContent className="p-2.5">
+          <CardContent className="px-2.5">
             <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-3 gap-y-1.5 text-xs">
               <span className="text-muted-foreground" />
               <span className="flex items-center gap-1 justify-end text-muted-foreground">
@@ -225,7 +225,7 @@ export const MobileBreaksPanel = () => {
         
         {/* Total Rest Time */}
         <Card className="border-emerald-500/30">
-          <CardContent className="p-3">
+          <CardContent className="px-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
@@ -254,7 +254,7 @@ export const MobileBreaksPanel = () => {
 
         {/* Tips Card */}
         <Card className="border-yellow-500/30 bg-yellow-500/5">
-          <CardContent className="p-3">
+          <CardContent className="px-3">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center shrink-0">
                 <Lightbulb className="h-4 w-4 text-yellow-400" />

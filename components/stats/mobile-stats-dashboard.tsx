@@ -341,7 +341,7 @@ export const MobileStatsDashboard = ({
       {/* Break Summary */}
       <div className="grid grid-cols-2 gap-3">
         <Card className="bg-background/50 border-primary/30">
-          <CardContent className="p-3">
+          <CardContent className="px-3">
             <div className="flex items-center gap-2 mb-2">
               <Coffee className="h-4 w-4 text-cyan-500" />
               <div className="text-xs text-muted-foreground">Short Breaks</div>
@@ -352,7 +352,7 @@ export const MobileStatsDashboard = ({
         </Card>
 
         <Card className="bg-background/50 border-primary/30">
-          <CardContent className="p-3">
+          <CardContent className="px-3">
             <div className="flex items-center gap-2 mb-2">
               <Timer className="h-4 w-4 text-yellow-500" />
               <div className="text-xs text-muted-foreground">Long Breaks</div>

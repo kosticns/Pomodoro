@@ -10,6 +10,7 @@ Public repository. Read `README.md` first.
 - Dates that decide behaviour (is this workday today?) are passed in from event handlers, never read during render. `lib/workday.ts` explains why.
 - Run `pnpm test` and `pnpm typecheck` before committing. Commit after a feature works and before risky changes. No force-pushes.
 - `pnpm lint` is declared in `package.json` but ESLint is not installed, so it has never run. Do not treat it as a gate.
+- `Card` supplies the vertical padding, `CardContent` the horizontal. Give CardContent `px-*`, never `p-*`, or it doubles the card's own padding.
 - A wizard that walks a list snapshots that list when it opens. `DayPlanWizard` explains why: triaging a task can remove it from the very filter the queue came from, so a live-derived queue shrinks under the index and silently skips entries.
 
 ## The morning flow

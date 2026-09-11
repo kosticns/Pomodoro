@@ -263,7 +263,7 @@ export const MobileTimerComponent = ({
                 : "border-muted-foreground/30 bg-muted/20",
           )}
         >
-          <CardContent className="p-4 relative z-10">
+          <CardContent className="px-4 relative z-10">
             {workdayTimer.hasWorkdayStarted ? (
               <div className="flex items-center gap-3">
                 {/* Circular pause button */}

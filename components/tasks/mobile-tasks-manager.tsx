@@ -573,7 +573,7 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
                   isActive && "border-cyan-500/50 bg-cyan-500/5"
                 )}
               >
-                <CardContent className="p-2.5">
+                <CardContent className="px-2.5">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">

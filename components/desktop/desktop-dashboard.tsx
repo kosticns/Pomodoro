@@ -390,7 +390,7 @@ export const DesktopDashboard = ({
           {/* ROW 1: Key Stats Banner - 4 equal stat cards spanning full width */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-5">
             <Card className="border border-primary/30 bg-card/50">
-              <CardContent className="p-4 lg:p-5">
+              <CardContent className="px-4 lg:px-5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
                     <Target className="h-5 w-5 text-primary" />
@@ -403,7 +403,7 @@ export const DesktopDashboard = ({
               </CardContent>
             </Card>
             <Card className="border border-emerald-500/30 bg-card/50">
-              <CardContent className="p-4 lg:p-5">
+              <CardContent className="px-4 lg:px-5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
                     <Clock className="h-5 w-5 text-emerald-400" />
@@ -418,7 +418,7 @@ export const DesktopDashboard = ({
               </CardContent>
             </Card>
             <Card className="border border-cyan-500/30 bg-card/50">
-              <CardContent className="p-4 lg:p-5">
+              <CardContent className="px-4 lg:px-5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-cyan-500/15 flex items-center justify-center flex-shrink-0">
                     <Coffee className="h-5 w-5 text-cyan-400" />
@@ -431,7 +431,7 @@ export const DesktopDashboard = ({
               </CardContent>
             </Card>
             <Card className="border border-yellow-500/30 bg-card/50">
-              <CardContent className="p-4 lg:p-5">
+              <CardContent className="px-4 lg:px-5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-yellow-500/15 flex items-center justify-center flex-shrink-0">
                     <Timer className="h-5 w-5 text-yellow-400" />
@@ -452,7 +452,7 @@ export const DesktopDashboard = ({
             <div className="lg:col-span-3 flex flex-col gap-4">
               {/* Timer Card */}
               <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
-                <CardContent className="p-6">
+                <CardContent className="px-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className={cn(
                       "px-3 py-1 rounded-full text-xs font-semibold tracking-wider",
@@ -527,7 +527,7 @@ export const DesktopDashboard = ({
                 <CardHeader className="pb-2 border-b border-border/30">
                   <CardTitle className="text-base font-semibold">Capacity</CardTitle>
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent className="px-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-3xl font-bold text-foreground">{utilizationRate.toFixed(0)}%</span>
                     <span className="text-sm text-muted-foreground">{todayPomodoros} / {potentialPomodoros}</span>
@@ -548,7 +548,7 @@ export const DesktopDashboard = ({
                 <CardHeader className="pb-2 border-b border-border/30">
                   <CardTitle className="text-base font-semibold">Session Progress</CardTitle>
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent className="px-4">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm font-semibold text-foreground">Session Timeline</span>
                     <span className="text-xs text-muted-foreground">
@@ -593,7 +593,7 @@ export const DesktopDashboard = ({
                     </span>
                   </div>
                 </CardHeader>
-                <CardContent className="flex-1 overflow-hidden flex flex-col p-4 gap-4">
+                <CardContent className="flex-1 overflow-hidden flex flex-col px-4 gap-4">
                   <div onDragOver={handleDragOver} onDrop={handleDrop}
                     className={cn("border-2 border-dashed rounded-lg p-4 transition-all min-h-[80px]",
                       draggedTask ? "border-primary bg-primary/5" : "border-border/50",
@@ -650,7 +650,7 @@ export const DesktopDashboard = ({
                     <CardTitle className="text-base font-semibold">{"Today's Time Tracking"}</CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent className="p-4 space-y-4">
+                <CardContent className="px-4 space-y-4">
                   <div>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm text-muted-foreground">Workday Active</span>
@@ -755,7 +755,7 @@ export const DesktopDashboard = ({
                 <CardHeader className="pb-2 border-b border-border/30">
                   <CardTitle className="text-base font-semibold">Weekly Pomodoros</CardTitle>
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent className="px-4">
                   <div className="flex items-end justify-between h-32 gap-2">
                     {weeklyData.map((day, i) => {
                       const maxPomodoros = Math.max(...weeklyData.map((d) => d.pomodoros), 1)

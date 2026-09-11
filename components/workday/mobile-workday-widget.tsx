@@ -16,7 +16,7 @@ export const MobileWorkdayWidget = ({ workdayTimer }: { workdayTimer: ReturnType
   // Placeholder for the actual widget content
   return (
     <Card className="cyber-card relative overflow-hidden bg-gradient-to-br from-black via-gray-900 to-black">
-      <CardContent className="p-4 relative z-10">
+      <CardContent className="px-4 relative z-10">
         {workdayTimer.isWorkdayActive ? (
           <>
             <div className="flex items-center justify-between mb-3">
