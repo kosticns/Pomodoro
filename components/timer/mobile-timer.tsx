@@ -389,21 +389,9 @@ export const MobileTimerComponent = ({
         </Card>
       )}
 
-      <div className="shrink-0 text-center space-y-2">
-        <div
-          className={cn(
-            "inline-flex px-6 py-2 text-sm font-bold tracking-widest",
-            "border-2 transition-colors duration-300",
-            sessionType === "focus" && "border-primary text-primary bg-primary/10",
-            sessionType === "shortBreak" && "border-secondary text-secondary bg-secondary/10",
-            sessionType === "longBreak" && "border-cyan-500 text-cyan-400 bg-cyan-500/10",
-          )}
-          role="status"
-          aria-live="polite"
-        >
-          {sessionLabels[sessionType]}
-        </div>
-      </div>
+      {/* The session label used to sit here in a row of its own. It now lives
+          inside the ring, directly above the digits, which is the same
+          information in space the ring already had. */}
 
       {/* Task Selector */}
       <div className="shrink-0">
@@ -477,6 +465,21 @@ export const MobileTimerComponent = ({
 
           {/* Timer Display - Scaled down content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
+            {/* Moved in from its own row above the ring. Smaller and pill-shaped
+                here, because at the old px-6 py-2 it crowded the digits. */}
+            <div
+              className={cn(
+                "mb-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-widest whitespace-nowrap",
+                "transition-colors duration-300",
+                sessionType === "focus" && "border-primary text-primary bg-primary/10",
+                sessionType === "shortBreak" && "border-secondary text-secondary bg-secondary/10",
+                sessionType === "longBreak" && "border-cyan-500 text-cyan-400 bg-cyan-500/10",
+              )}
+              role="status"
+              aria-live="polite"
+            >
+              {sessionLabels[sessionType]}
+            </div>
             <div
               className={cn(
                 "text-4xl sm:text-5xl font-bold tabular-nums font-mono",
@@ -490,21 +493,26 @@ export const MobileTimerComponent = ({
             >
               {formatTime(time)}
             </div>
+            {/* Widths are a percentage of the ring, not fixed pixels. A square
+                that always fits inside a circle is about 70% of its diameter,
+                so 70% keeps this text inside the outline at every ring size.
+                The old fixed 180px spilled 21px past the circle on a 375x667
+                phone, where the ring is only 193px across. */}
             {activeTask && sessionType === "focus" && (
               <div className="mt-2 text-center px-3">
-                <div className="text-xs sm:text-sm text-foreground/90 font-semibold truncate max-w-[160px] sm:max-w-[180px]">{activeTask.name}</div>
+                <div className="text-xs sm:text-sm text-foreground/90 font-semibold truncate max-w-[70%] mx-auto">{activeTask.name}</div>
                 <div className="text-[10px] sm:text-xs text-foreground/60 mt-0.5 font-mono tracking-wide">
                   {projects.find((p) => p.id === activeTask.projectId)?.name || "Unknown Project"}
                 </div>
               </div>
             )}
             {sessionType === "shortBreak" && currentBreakActivity && (
-              <div className="text-xs sm:text-sm text-foreground/80 mt-2 text-center px-4 max-w-[180px] sm:max-w-[220px] leading-relaxed">
+              <div className="text-xs sm:text-sm text-foreground/80 mt-2 text-center max-w-[70%] leading-relaxed">
                 {currentBreakActivity}
               </div>
             )}
             {sessionType === "longBreak" && currentLongBreakActivity && (
-              <div className="text-xs sm:text-sm text-foreground/80 mt-2 text-center px-4 max-w-[180px] sm:max-w-[220px] leading-relaxed">
+              <div className="text-xs sm:text-sm text-foreground/80 mt-2 text-center max-w-[70%] leading-relaxed">
                 {currentLongBreakActivity}
               </div>
             )}
