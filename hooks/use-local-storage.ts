@@ -1,6 +1,11 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useSyncExternalStore } from "react"
+import {
+  getStorageFailure,
+  reportStorageFailure,
+  subscribeStorageHealth,
+} from "@/lib/storage-health"
 
 export const useLocalStorage = <T,>(key: string, initialValue: T) => {
   const [storedValue, setStoredValue] = useState<T>(() => {
@@ -35,6 +40,12 @@ export const useLocalStorage = <T,>(key: string, initialValue: T) => {
           }
         } catch (error) {
           console.error(`Error setting localStorage key "${key}":`, error)
+          // Previously this was the end of it: the error went to the console and
+          // the value was returned anyway, so the screen showed the edit as
+          // saved when nothing had been written. Report it so the app can say
+          // so. The value is still returned, because refusing the state update
+          // would lose the edit from the screen as well as from storage.
+          reportStorageFailure(key, error)
         }
         return next
       })
@@ -43,6 +54,17 @@ export const useLocalStorage = <T,>(key: string, initialValue: T) => {
   )
 
   return [storedValue, setValue] as const
+}
+
+/**
+ * The current storage failure, or null. Subscribes to the module store rather
+ * than widening every useLocalStorage tuple.
+ *
+ * Server snapshot is null: there is no localStorage to fail during a render
+ * that never touches it.
+ */
+export function useStorageHealth() {
+  return useSyncExternalStore(subscribeStorageHealth, getStorageFailure, () => null)
 }
 
 // Notifications Hook

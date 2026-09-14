@@ -82,10 +82,12 @@ import { recordPostureHeld } from "@/lib/daily-stat"
 import { standingCadenceOf, shouldRemindPosture } from "@/lib/posture"
 import { shouldPromptNewDay, localHour, DEFAULT_DAY_START_HOUR, greeting } from "@/lib/day-start"
 import { shouldRunDayPlan } from "@/lib/day-plan"
+import { backupWarning, isBackupUrgent } from "@/lib/backup-freshness"
 import { nextSession, startOfCycle, isStaleTimerState } from "@/lib/session-cycle"
 import { buildBackupJSON, buildBackupCSV, backupFilename } from "@/lib/backup"
 import { AppStateProvider, useAppState } from "@/lib/app-state"
-import { useLocalStorage } from "@/hooks/use-local-storage"
+import { useLocalStorage, useStorageHealth } from "@/hooks/use-local-storage"
+import { clearStorageFailure } from "@/lib/storage-health"
 import { useNotifications } from "@/hooks/use-notifications"
 import { useWorkdayTimer } from "@/hooks/use-workday-timer"
 import { CustomBarChart } from "@/components/charts/custom-bar-chart"
@@ -137,6 +139,12 @@ const PomodoroApp = () => {
   // Which calendar day the start-of-day prompt was last handled for, saved so
   // it survives a reload and cannot reappear later the same day.
   const [lastPromptedDate, setLastPromptedDate] = useLocalStorage<string>("lastDayPromptDate", "")
+  // Null unless a write to localStorage has failed; see lib/storage-health.ts.
+  const storageFailure = useStorageHealth()
+  // Written only when a backup is actually produced, never on Skip. The prompt
+  // date above cannot stand in for this: it advances whichever button is
+  // pressed, so a month of skipping looked identical to a month of backing up.
+  const [lastBackupDate, setLastBackupDate] = useLocalStorage<string>("lastBackupDate", "")
 
   // Backup building lives in lib/backup.ts. It used to be duplicated here and
   // in the Settings panel, and the two copies drifted.
@@ -177,11 +185,14 @@ const PomodoroApp = () => {
   const handleBackupAndStart = useCallback((format: "json" | "csv" | "skip") => {
     if (format === "json") {
       downloadBackupJSON()
+      setLastBackupDate(getLocalDateStr())
     } else if (format === "csv") {
       downloadBackupCSV()
+      setLastBackupDate(getLocalDateStr())
     }
     // Record the day whichever button was pressed. Skipping is a decision, and
-    // re-asking after it would make the prompt feel broken.
+    // re-asking after it would make the prompt feel broken. The backup date
+    // above is deliberately NOT set on skip.
     setLastPromptedDate(getLocalDateStr())
     setShowBackupModal(false)
     // Then plan the day. Backing up yesterday is the bookkeeping; deciding what
@@ -192,7 +203,7 @@ const PomodoroApp = () => {
       setDayPlanMode("tasks")
       setIsDayPlanOpen(true)
     }
-  }, [downloadBackupJSON, downloadBackupCSV, setLastPromptedDate, tasks])
+  }, [downloadBackupJSON, downloadBackupCSV, setLastPromptedDate, setLastBackupDate, tasks])
 
   // Notify once per stretch when it is time to change posture.
   //
@@ -785,6 +796,27 @@ const skipSession = useCallback(() => {
     // fixed nav ends up covering whatever sits in the last 65px. dvh also
     // tracks mobile browser chrome showing and hiding.
     <div className="h-dvh bg-background text-foreground flex flex-col">
+      {/* A write to localStorage failed, so what is on screen is no longer what
+          is saved. This sits above everything, on every screen, because there
+          is no version of this the user should miss. */}
+      {storageFailure ? (
+        <div
+          role="alert"
+          className="shrink-0 flex items-start gap-2 px-4 py-2.5 bg-red-500/15 border-b border-red-500/40 text-red-300"
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+          <p className="text-xs leading-relaxed flex-1 min-w-0">{storageFailure.message}</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearStorageFailure}
+            className="h-7 px-2 text-xs text-red-300 hover:text-red-200 hover:bg-red-500/20 shrink-0"
+          >
+            Dismiss
+          </Button>
+        </div>
+      ) : null}
+
       {viewMode === "mobile" && (
         <div className="flex items-center justify-center p-4 border-b border-border">
           <Button
@@ -888,7 +920,24 @@ const skipSession = useCallback(() => {
               A new day. Save yesterday&apos;s data, then start your first pomodoro.
             </DialogDescription>
           </DialogHeader>
-          
+
+          {/* How long since a backup was actually taken, as opposed to how long
+              since this prompt was dismissed. Silent while it is recent. */}
+          {backupWarning(lastBackupDate, getLocalDateStr()) ? (
+            <div
+              className={cn(
+                "flex items-start gap-2 rounded-lg border px-3 py-2 text-xs leading-relaxed",
+                isBackupUrgent(lastBackupDate, getLocalDateStr())
+                  ? "border-red-500/40 bg-red-500/10 text-red-300"
+                  : "border-yellow-500/40 bg-yellow-500/10 text-yellow-300",
+              )}
+            >
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span>{backupWarning(lastBackupDate, getLocalDateStr())}</span>
+            </div>
+          ) : null}
+
+
           <div className="grid grid-cols-2 gap-3 py-4">
             <Button
               onClick={() => handleBackupAndStart("json")}

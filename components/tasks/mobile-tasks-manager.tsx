@@ -383,7 +383,7 @@ export const MobileTasksManager = ({
               <span className="text-sm">Plan</span>
             </Button>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[140px] sm:w-[168px] h-9 bg-background/50 border-primary/30">
+              <SelectTrigger className="w-[148px] min-[360px]:w-[168px] h-9 bg-background/50 border-primary/30">
                 {/* min-w-0 lets this shrink inside the fixed-width trigger.
                     Without it the flex item keeps its content width, so the
                     label and the chevron spilled 38px and 62px past the
@@ -394,11 +394,11 @@ export const MobileTasksManager = ({
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="status">By Status</SelectItem>
-                <SelectItem value="name">By Name</SelectItem>
-                <SelectItem value="project">By Project</SelectItem>
-                <SelectItem value="pomodoros">Most Pomodoros</SelectItem>
-                <SelectItem value="activity">Recent Activity</SelectItem>
+                <SelectItem value="status">Status</SelectItem>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="project">Project</SelectItem>
+                <SelectItem value="pomodoros">Pomodoros</SelectItem>
+                <SelectItem value="activity">Recent</SelectItem>
               </SelectContent>
             </Select>
             <Button onClick={() => setIsAddTaskDialogOpen(true)} size="sm" className="bg-primary hover:bg-primary/90">
@@ -420,7 +420,7 @@ export const MobileTasksManager = ({
               <span className="text-sm">Plan</span>
             </Button>
             <Select value={projectSortBy} onValueChange={setProjectSortBy}>
-              <SelectTrigger className="w-[140px] sm:w-[168px] h-9 bg-background/50 border-primary/30">
+              <SelectTrigger className="w-[148px] min-[360px]:w-[168px] h-9 bg-background/50 border-primary/30">
                 {/* min-w-0 lets this shrink inside the fixed-width trigger.
                     Without it the flex item keeps its content width, so the
                     label and the chevron spilled 38px and 62px past the
@@ -431,11 +431,11 @@ export const MobileTasksManager = ({
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="priority">By Priority</SelectItem>
-                <SelectItem value="status">By Status</SelectItem>
-                <SelectItem value="name">By Name</SelectItem>
-                <SelectItem value="tasks">Most Tasks</SelectItem>
-                <SelectItem value="activity">Recent Activity</SelectItem>
+                <SelectItem value="priority">Priority</SelectItem>
+                <SelectItem value="status">Status</SelectItem>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="tasks">Task count</SelectItem>
+                <SelectItem value="activity">Recent</SelectItem>
               </SelectContent>
             </Select>
             <Button onClick={() => setIsAddProjectDialogOpen(true)} size="sm" className="bg-primary hover:bg-primary/90">

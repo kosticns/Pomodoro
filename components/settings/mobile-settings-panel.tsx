@@ -4,6 +4,7 @@ import { useAppState } from "@/lib/app-state"
 import { standingCadenceOf } from "@/lib/posture"
 import { DEFAULT_DAY_START_HOUR } from "@/lib/day-start"
 import { buildBackupJSON, buildBackupCSV, backupFilename } from "@/lib/backup"
+import { backupWarning, isBackupUrgent } from "@/lib/backup-freshness"
 import React, { useState, useRef } from "react"
 import {
   Timer,
@@ -16,6 +17,7 @@ import {
   FileJson,
   FileSpreadsheet,
   Upload,
+  AlertTriangle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,6 +27,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { getLocalDateStr, playSound } from "@/lib/app-utils"
+import { useLocalStorage } from "@/hooks/use-local-storage"
 import { useWorkdayTimer } from "@/hooks/use-workday-timer"
 import type { Project, Note, Task, Settings, DailyStat } from "@/lib/types"
 import { WorkdayTimelineSlider } from "@/components/workday/workday-timeline-slider"
@@ -41,6 +44,9 @@ export const MobileSettingsPanel = ({
   const { settings, setSettings, projects, setProjects, tasks, setTasks, stats, setStats, notes, setNotes } = useAppState()
   const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly">("weekly")
   const [isExporting, setIsExporting] = useState(false)
+  // Same key the start-of-day prompt writes. These export buttons are the
+  // other way a backup actually gets taken, so they have to record it too.
+  const [lastBackupDate, setLastBackupDate] = useLocalStorage<string>("lastBackupDate", "")
 
   const soundOptions = [
     { value: "focus-end.mp3", label: "Digital Alarm" },
@@ -80,6 +86,7 @@ export const MobileSettingsPanel = ({
       "application/json",
       backupFilename("json", getLocalDateStr()),
     )
+    setLastBackupDate(getLocalDateStr())
   }
 
   // Import JSON Backup
@@ -133,6 +140,7 @@ export const MobileSettingsPanel = ({
       "text/csv",
       backupFilename("csv", getLocalDateStr()),
     )
+    setLastBackupDate(getLocalDateStr())
   }
 
   // Text Report Export
@@ -682,6 +690,27 @@ export const MobileSettingsPanel = ({
           <p className="text-xs text-muted-foreground">Download or restore all your data</p>
         </CardHeader>
         <CardContent className="space-y-3">
+          {/* When the last backup actually happened. The morning prompt says
+              this too, but it is dismissible and easy to skip past, so the
+              state needs somewhere permanent to live. */}
+          {backupWarning(lastBackupDate, getLocalDateStr()) ? (
+            <div
+              className={cn(
+                "flex items-start gap-2 rounded-lg border px-3 py-2 text-xs leading-relaxed",
+                isBackupUrgent(lastBackupDate, getLocalDateStr())
+                  ? "border-red-500/40 bg-red-500/10 text-red-300"
+                  : "border-yellow-500/40 bg-yellow-500/10 text-yellow-300",
+              )}
+            >
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span>{backupWarning(lastBackupDate, getLocalDateStr())}</span>
+            </div>
+          ) : (
+            <p className="text-xs text-emerald-400">
+              Last backup {lastBackupDate === getLocalDateStr() ? "today" : `on ${lastBackupDate}`}.
+            </p>
+          )}
+
           {/* Export buttons */}
           <div>
             <p className="text-xs text-muted-foreground mb-2">Export</p>
