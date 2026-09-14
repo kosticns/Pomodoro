@@ -94,7 +94,7 @@ import { CustomPieChart } from "@/components/charts/custom-pie-chart"
 import { MobileTaskSelector } from "@/components/timer/mobile-task-selector"
 import { MobileTimerComponent } from "@/components/timer/mobile-timer"
 import { MobileTasksManager } from "@/components/tasks/mobile-tasks-manager"
-import { DayPlanWizard } from "@/components/day-plan/day-plan-wizard"
+import { DayPlanWizard, type DayPlanMode } from "@/components/day-plan/day-plan-wizard"
 import { MobileBreaksPanel } from "@/components/breaks/mobile-breaks-panel"
 import { MobileStatsDashboard } from "@/components/stats/mobile-stats-dashboard"
 import { WorkdayTimelineSlider } from "@/components/workday/workday-timeline-slider"
@@ -129,10 +129,11 @@ const PomodoroApp = () => {
 
   // Backup modal state
   const [showBackupModal, setShowBackupModal] = useState(false)
-  // The prioritisation wizard, opened by the start-of-day prompt and by the
-  // Tasks tab. Kept here rather than in AppState because it is view state, and
-  // AppState re-renders every consumer when it changes.
+  // The prioritisation wizard, opened by the start-of-day prompt and by both
+  // sub-tabs of Tasks. Kept here rather than in AppState because it is view
+  // state, and AppState re-renders every consumer when it changes.
   const [isDayPlanOpen, setIsDayPlanOpen] = useState(false)
+  const [dayPlanMode, setDayPlanMode] = useState<DayPlanMode>("tasks")
   // Which calendar day the start-of-day prompt was last handled for, saved so
   // it survives a reload and cannot reappear later the same day.
   const [lastPromptedDate, setLastPromptedDate] = useLocalStorage<string>("lastDayPromptDate", "")
@@ -187,7 +188,10 @@ const PomodoroApp = () => {
     // to work on is the part that makes the morning useful, so the two run back
     // to back. Skipped entirely when there is no unfinished work, since an
     // empty wizard every morning would just be friction.
-    if (shouldRunDayPlan(tasks)) setIsDayPlanOpen(true)
+    if (shouldRunDayPlan(tasks)) {
+      setDayPlanMode("tasks")
+      setIsDayPlanOpen(true)
+    }
   }, [downloadBackupJSON, downloadBackupCSV, setLastPromptedDate, tasks])
 
   // Notify once per stretch when it is time to change posture.
@@ -742,7 +746,10 @@ const skipSession = useCallback(() => {
         return (
   <MobileTasksManager
   key="tasks-view"
-  onStartDayPlan={() => setIsDayPlanOpen(true)}
+  onStartDayPlan={(mode) => {
+    setDayPlanMode(mode)
+    setIsDayPlanOpen(true)
+  }}
   />
         )
       case "breaks":
@@ -917,7 +924,7 @@ const skipSession = useCallback(() => {
 
       {/* Prioritisation, straight after the start-of-day prompt. Also reachable
           from the Tasks tab, so there is one triage flow rather than two. */}
-      <DayPlanWizard open={isDayPlanOpen} onOpenChange={setIsDayPlanOpen} />
+      <DayPlanWizard open={isDayPlanOpen} onOpenChange={setIsDayPlanOpen} mode={dayPlanMode} />
     </div>
   )
 }

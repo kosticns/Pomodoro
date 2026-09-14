@@ -1,17 +1,21 @@
-import type { Task, TaskStatus } from "./types"
+import type { Project, ProjectStatus, Task, TaskStatus } from "./types"
 
 /**
- * The start-of-day prioritisation wizard.
+ * The start-of-day prioritisation wizard, for tasks and for projects.
  *
- * Runs after the start-of-day prompt. Walks every unfinished task one at a
+ * Runs after the start-of-day prompt. Walks every unfinished item one at a
  * time, then ends by picking which one to actually start. The point is that
- * the day begins with a decision rather than with whatever task happened to be
+ * the day begins with a decision rather than with whatever happened to be
  * active yesterday.
  *
- * The Tasks tab already had a "Daily" review that set each task's status one
- * by one. It stopped there: it never chose a task to work on and never touched
- * the active task, so you finished the review no better off than when you
- * started. This replaces it rather than sitting beside it.
+ * Both tabs previously had a "Daily" review that set each item's status one by
+ * one and stopped there. Neither chose anything to work on, so you finished no
+ * better off than when you started. This replaces both.
+ *
+ * The two flows differ only in their status vocabulary and in where they land:
+ * the task flow ends by activating the chosen task, and the project flow ends
+ * by activating a task inside the chosen project. The walk itself is shared,
+ * because it is the same walk.
  *
  * All state transitions are pure functions so the flow can be tested without
  * rendering anything.
@@ -19,14 +23,21 @@ import type { Task, TaskStatus } from "./types"
 
 export type TriageDecision = "today" | "later" | "done" | "skip"
 
-/** taskId -> what was decided for it in this run. */
+/** item id -> what was decided for it in this run. */
 export type Decisions = Record<string, TriageDecision>
+
+/** The shape the shared walk needs. Both Task and Project satisfy it. */
+interface Triageable {
+  id: string
+  status: string
+  lastInteractionTime?: number
+}
 
 export interface DayPlanState {
   /** Index into the triage queue. */
   index: number
   decisions: Decisions
-  /** Set once the user picks the task to start. */
+  /** Set once the user picks the item to start. */
   chosenTaskId: string | null
 }
 
@@ -35,17 +46,27 @@ export function initialDayPlanState(): DayPlanState {
 }
 
 /**
- * The tasks to walk through, in a stable order.
+ * The items to walk through, in a stable order.
  *
- * Most recently touched first, because a task you worked on yesterday is the
- * one you have the clearest opinion about this morning. Finished tasks are
+ * Most recently touched first, because something you worked on yesterday is
+ * what you have the clearest opinion about this morning. Finished items are
  * excluded; there is nothing to decide about them.
  */
-export function triageQueue(tasks: Task[]): Task[] {
-  return tasks
+export function triageQueueOf<T extends Triageable>(items: T[]): T[] {
+  return items
     .filter((t) => t.status !== "Done")
     .slice()
     .sort((a, b) => (b.lastInteractionTime || 0) - (a.lastInteractionTime || 0))
+}
+
+/** The task queue. */
+export function triageQueue(tasks: Task[]): Task[] {
+  return triageQueueOf(tasks)
+}
+
+/** The project queue. */
+export function projectTriageQueue(projects: Project[]): Project[] {
+  return triageQueueOf(projects)
 }
 
 /**
@@ -69,24 +90,81 @@ export function planPhase(state: DayPlanState, queueLength: number): "triage" | 
 }
 
 /**
- * The tasks eligible to be started first.
+ * The items eligible to be started first.
  *
- * Only what was marked "today" in this run. A task skipped or parked is not a
- * candidate even if it is still In Progress from yesterday, because the user
- * did not choose it this morning.
+ * Only what was marked "today" in this run. Anything skipped or parked is not
+ * a candidate even if it is still live from yesterday, because the user did
+ * not choose it this morning.
  */
-export function candidatesForToday(queue: Task[], decisions: Decisions): Task[] {
+export function candidatesForToday<T extends { id: string }>(
+  queue: T[],
+  decisions: Decisions,
+): T[] {
   return queue.filter((t) => decisions[t.id] === "today")
 }
 
 /**
  * Should the wizard run at all?
  *
- * No unfinished tasks means nothing to triage, and opening an empty wizard
+ * Nothing unfinished means nothing to triage, and opening an empty wizard
  * every morning would be pure friction.
  */
 export function shouldRunDayPlan(tasks: Task[]): boolean {
   return triageQueue(tasks).length > 0
+}
+
+/**
+ * Apply one decision to the project list.
+ *
+ * "today" and "later" map onto the two live project statuses: Ongoing means
+ * active, On Hold means parked. "skip" changes nothing.
+ */
+export function applyProjectDecision(
+  projects: Project[],
+  projectId: string,
+  decision: TriageDecision,
+): Project[] {
+  if (decision === "skip") return projects
+  const status: ProjectStatus =
+    decision === "today" ? "Ongoing" : decision === "later" ? "On Hold" : "Done"
+  return projects.map((p) => (p.id === projectId ? { ...p, status } : p))
+}
+
+/**
+ * A project decision reaches its tasks.
+ *
+ * Finishing a project finishes its tasks, and parking one parks the work that
+ * was in progress inside it. This mirrors what the old Project Review did, and
+ * it is the reason a project decision cannot be a simple status write: leaving
+ * live tasks inside a finished project is how the task list fills with work
+ * that no longer exists.
+ */
+export function cascadeProjectDecisionToTasks(
+  tasks: Task[],
+  projectId: string,
+  decision: TriageDecision,
+): Task[] {
+  if (decision === "done") {
+    return tasks.map((t) => (t.projectId === projectId ? { ...t, status: "Done" as TaskStatus } : t))
+  }
+  if (decision === "later") {
+    return tasks.map((t) =>
+      t.projectId === projectId && t.status === "In Progress"
+        ? { ...t, status: "To Do" as TaskStatus }
+        : t,
+    )
+  }
+  return tasks
+}
+
+/** The unfinished tasks inside a project, most recently touched first. */
+export function tasksForProject(tasks: Task[], projectId: string): Task[] {
+  return triageQueueOf(tasks.filter((t) => t.projectId === projectId))
+}
+
+/** Should the project wizard run at all? */
+export function shouldRunProjectPlan(projects: Project[]): boolean {
+  return projectTriageQueue(projects).length > 0
 }
 
 /** Advances past the current task, recording what was decided. */
@@ -108,12 +186,12 @@ export function stepBack(state: DayPlanState): DayPlanState {
 }
 
 /**
- * Which task should be pre-selected on the pick step.
+ * Which item should be pre-selected on the pick step.
  *
  * With a single candidate there is nothing to choose, so it is preselected and
  * the step becomes a confirmation. With several, nothing is preselected: a
  * default would quietly make the decision the wizard exists to force.
  */
-export function defaultChoice(candidates: Task[]): string | null {
+export function defaultChoice<T extends { id: string }>(candidates: T[]): string | null {
   return candidates.length === 1 ? candidates[0].id : null
 }

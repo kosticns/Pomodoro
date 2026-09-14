@@ -46,7 +46,11 @@ const PRIORITY_CLASSES: Record<Priority, string> = {
   Low: "border-muted-foreground/25 text-muted-foreground/70",
 }
 
-export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => void }) => {
+export const MobileTasksManager = ({
+  onStartDayPlan,
+}: {
+  onStartDayPlan: (mode: "tasks" | "projects") => void
+}) => {
   const { projects, setProjects, tasks, setTasks, activeTask, setActiveTask, notes } = useAppState()
   // Top-level tab: Tasks or Projects
   const [mainTab, setMainTab] = useState<"tasks" | "projects">("tasks")
@@ -97,63 +101,12 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
   // and ends by activating the chosen task; the button above opens that.
   const incompleteTasks = tasks.filter((t) => t.status !== "Done")
 
-  // Project Daily review state
-  const [isProjectDailyReviewOpen, setIsProjectDailyReviewOpen] = useState(false)
-  const [projectDailyReviewIndex, setProjectDailyReviewIndex] = useState(0)
-  const incompleteProjects = projects
-    .filter((p) => p.status !== "Done")
-    .sort((a, b) => (b.lastInteractionTime || 0) - (a.lastInteractionTime || 0))
-  const currentReviewProject = incompleteProjects[projectDailyReviewIndex]
-  
-  const startProjectDailyReview = () => {
-    setProjectDailyReviewIndex(0)
-    setIsProjectDailyReviewOpen(true)
-  }
-  
-  const handleProjectDailyReviewAction = (action: "Ongoing" | "On Hold" | "Done" | "Skip") => {
-    if (currentReviewProject && action !== "Skip") {
-      // Update project status
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.id === currentReviewProject.id ? { ...p, status: action } : p
-        )
-      )
-      
-      // If project is marked as Done, mark all its tasks as Done too
-      if (action === "Done") {
-        setTasks((prev) =>
-          prev.map((t) =>
-            t.projectId === currentReviewProject.id ? { ...t, status: "Done" } : t
-          )
-        )
-      }
-      
-      // If project is On Hold, set all incomplete tasks to To Do (paused state)
-      if (action === "On Hold") {
-        setTasks((prev) =>
-          prev.map((t) =>
-            t.projectId === currentReviewProject.id && t.status === "In Progress" 
-              ? { ...t, status: "To Do" } 
-              : t
-          )
-        )
-      }
-    }
-    
-    // When marking as Done, the project will be removed from incompleteProjects array
-    if (action === "Done") {
-      if (incompleteProjects.length <= 1) {
-        setIsProjectDailyReviewOpen(false)
-      }
-    } else {
-      if (projectDailyReviewIndex < incompleteProjects.length - 1) {
-        setProjectDailyReviewIndex(projectDailyReviewIndex + 1)
-      } else {
-        setIsProjectDailyReviewOpen(false)
-      }
-    }
-  }
-  
+  // The per-project Daily Review used to live here. Like the task one, it set
+  // statuses and then ended without choosing anything to work on.
+  // DayPlanWizard in projects mode replaces it and ends on a task you can
+  // start; the button above opens that.
+  const incompleteProjects = projects.filter((p) => p.status !== "Done")
+
   const projectStatusOptions: ProjectStatus[] = ["On Hold", "Ongoing", "Done"]
 
   // Get project by ID
@@ -386,7 +339,10 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header with Top-Level Tab Switcher */}
-      <div className="flex items-center justify-between p-3 border-b border-border/50 bg-background/95 backdrop-blur">
+      {/* flex-wrap, because tabs + action + sort + add do not fit across a
+          375px phone and the sort control was being clipped off the edge.
+          It stays on one row wherever there is room. */}
+      <div className="flex flex-wrap items-center justify-between gap-y-2 p-3 border-b border-border/50 bg-background/95 backdrop-blur">
         <div className="flex items-center gap-1 bg-muted/30 rounded-lg p-1">
           <button
             onClick={() => setMainTab("tasks")}
@@ -419,18 +375,22 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
             <Button
               variant="outline"
               size="sm"
-              onClick={onStartDayPlan}
+              onClick={() => onStartDayPlan("tasks")}
               disabled={incompleteTasks.length === 0}
               className="h-9 px-3 border-cyan-500/30 hover:bg-cyan-500/10 hover:border-cyan-400"
             >
               <Sunrise className="h-4 w-4 mr-1.5 text-cyan-400" />
-              <span className="text-sm">Plan day</span>
+              <span className="text-sm">Plan</span>
             </Button>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[140px] h-9 bg-background/50 border-primary/30">
-                <div className="flex items-center gap-2 text-sm">
-                  <ArrowUpDown className="h-3.5 w-3.5" />
-                  <SelectValue />
+              <SelectTrigger className="w-[168px] h-9 bg-background/50 border-primary/30">
+                {/* min-w-0 lets this shrink inside the fixed-width trigger.
+                    Without it the flex item keeps its content width, so the
+                    label and the chevron spilled 38px and 62px past the
+                    trigger's right edge and landed on the button beside it. */}
+                <div className="flex items-center gap-2 text-sm min-w-0">
+                  <ArrowUpDown className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate"><SelectValue /></span>
                 </div>
               </SelectTrigger>
               <SelectContent>
@@ -447,22 +407,27 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            {/* Project Daily Review Button */}
+            {/* Opens the same wizard as the Tasks tab, in projects mode: the
+                walk is identical and it ends on a task you can start. */}
             <Button
               variant="outline"
               size="sm"
-              onClick={startProjectDailyReview}
+              onClick={() => onStartDayPlan("projects")}
               disabled={incompleteProjects.length === 0}
-              className="h-9 px-3 border-cyan-500/30 hover:bg-cyan-500/10 hover:border-cyan-400"
+              className="h-9 px-3 border-purple-500/30 hover:bg-purple-500/10 hover:border-purple-400"
             >
-              <Sunrise className="h-4 w-4 mr-1.5 text-cyan-400" />
-              <span className="text-sm">Daily</span>
+              <Sunrise className="h-4 w-4 mr-1.5 text-purple-400" />
+              <span className="text-sm">Plan</span>
             </Button>
             <Select value={projectSortBy} onValueChange={setProjectSortBy}>
-              <SelectTrigger className="w-[140px] h-9 bg-background/50 border-primary/30">
-                <div className="flex items-center gap-2 text-sm">
-                  <ArrowUpDown className="h-3.5 w-3.5" />
-                  <SelectValue />
+              <SelectTrigger className="w-[168px] h-9 bg-background/50 border-primary/30">
+                {/* min-w-0 lets this shrink inside the fixed-width trigger.
+                    Without it the flex item keeps its content width, so the
+                    label and the chevron spilled 38px and 62px past the
+                    trigger's right edge and landed on the button beside it. */}
+                <div className="flex items-center gap-2 text-sm min-w-0">
+                  <ArrowUpDown className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate"><SelectValue /></span>
                 </div>
               </SelectTrigger>
               <SelectContent>
@@ -1360,121 +1325,6 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
     </DialogContent>
   </Dialog>
   
-  {/* Project Daily Review Dialog */}
-  <Dialog open={isProjectDailyReviewOpen} onOpenChange={setIsProjectDailyReviewOpen}>
-    <DialogContent className="w-[95vw] max-w-md border-purple-500/30 bg-background/95 backdrop-blur-sm p-0 overflow-hidden">
-      {currentReviewProject ? (
-        <>
-          {/* Progress Header */}
-          <div className="px-5 pt-5 pb-3 border-b border-border/30">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Sunrise className="h-5 w-5 text-purple-400" />
-                <DialogTitle className="font-semibold text-foreground text-base">Project Review</DialogTitle>
-              </div>
-              <span className="text-sm text-muted-foreground">
-                {projectDailyReviewIndex + 1} of {incompleteProjects.length}
-              </span>
-            </div>
-            <div className="h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-purple-500 to-primary rounded-full transition-all duration-300"
-                style={{ width: `${((projectDailyReviewIndex + 1) / incompleteProjects.length) * 100}%` }}
-              />
-            </div>
-          </div>
-          
-          {/* Project Card */}
-          <div className="p-3">
-            <div className="mb-4">
-              {/* Project Name */}
-              <h3 className="text-xl font-bold text-foreground mb-2">{currentReviewProject.name}</h3>
-              
-              {/* Project Meta */}
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <CheckSquare className="h-4 w-4" />
-                  {getProjectActiveTaskCount(currentReviewProject.id)}/{getProjectTaskCount(currentReviewProject.id)} tasks
-                </span>
-                <span className="flex items-center gap-1">
-                  <Timer className="h-4 w-4" />
-                  {getProjectCompletedPomodoros(currentReviewProject.id)} pomodoros
-                </span>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-xs",
-                    currentReviewProject.status === "Ongoing" && "border-cyan-500/50 text-cyan-500",
-                    currentReviewProject.status === "On Hold" && "border-yellow-500/50 text-yellow-500",
-                  )}
-                >
-                  {currentReviewProject.status}
-                </Badge>
-              </div>
-            </div>
-            
-            {/* Status Question */}
-            <p className="text-sm text-muted-foreground mb-4">What&apos;s the status of this project?</p>
-            
-            {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                onClick={() => handleProjectDailyReviewAction("Ongoing")}
-                className="h-14 flex flex-col items-center gap-1 border-cyan-500/30 hover:bg-cyan-500/10"
-              >
-                <Play className="h-5 w-5 text-cyan-400" />
-                <span className="text-xs">Ongoing</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleProjectDailyReviewAction("On Hold")}
-                className="h-14 flex flex-col items-center gap-1 border-yellow-500/30 hover:bg-yellow-500/10"
-              >
-                <Pause className="h-5 w-5 text-yellow-400" />
-                <span className="text-xs">On Hold</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleProjectDailyReviewAction("Done")}
-                className="h-14 flex flex-col items-center gap-1 border-emerald-500/30 hover:bg-emerald-500/10"
-              >
-                <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                <span className="text-xs">Done</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleProjectDailyReviewAction("Skip")}
-                className="h-14 flex flex-col items-center gap-1 border-muted-foreground/30 hover:bg-muted-foreground/10"
-              >
-                <SkipForward className="h-5 w-5 text-muted-foreground" />
-                <span className="text-xs">Skip</span>
-              </Button>
-            </div>
-            
-            {/* Info about task sync */}
-            <p className="text-xs text-muted-foreground mt-4 text-center">
-              Marking Done will complete all tasks. On Hold will pause active tasks.
-            </p>
-          </div>
-        </>
-      ) : (
-        /* Completion Screen */
-        <div className="p-8 text-center">
-          <div className="w-16 h-16 rounded-full bg-purple-500/10 border border-purple-500/30 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="h-8 w-8 text-purple-400" />
-          </div>
-          <DialogTitle className="text-xl font-bold text-foreground mb-2">Project Review Complete</DialogTitle>
-          <p className="text-sm text-muted-foreground mb-6">
-            You&apos;ve reviewed all {incompleteProjects.length} projects. Have a productive day!
-          </p>
-          <Button onClick={() => setIsProjectDailyReviewOpen(false)} className="w-full">
-            Close
-          </Button>
-        </div>
-      )}
-    </DialogContent>
-  </Dialog>
   </div>
   )
   }

@@ -15,6 +15,8 @@ Public repository. Read `README.md` first.
 - Every `DialogContent` needs a `DialogTitle`, or Radix warns at runtime and the dialog is unlabelled for screen readers.
 - The pomodoro cadence lives in `lib/session-cycle.ts` and nowhere else. It had been hand-written in five places (natural completion, skip, two Skip-button labels, the desktop timeline) and they disagreed, which is what made long breaks arrive after two pomodoros. Call `nextSession`, never re-derive the modulo.
 - `Card` supplies the vertical padding, `CardContent` the horizontal. Give CardContent `px-*`, never `p-*`, or it doubles the card's own padding.
+- `DayPlanWizard` serves tasks and projects from one component and one state machine, via `mode`. Projects add a step: a project is not something you can start, so it ends by picking a task inside the chosen project.
+- A fixed-width flex container needs `min-w-0` on the child that should shrink. Without it the child keeps its content width and spills out, which is how the sort control's label and chevron ended up on top of the button beside it.
 - A wizard that walks a list snapshots that list when it opens. `DayPlanWizard` explains why: triaging a task can remove it from the very filter the queue came from, so a live-derived queue shrinks under the index and silently skips entries.
 
 ## The morning flow

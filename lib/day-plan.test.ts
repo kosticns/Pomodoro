@@ -236,3 +236,195 @@ describe("a full run through the wizard", () => {
     expect(candidatesForToday(queue, state.decisions)).toEqual([])
   })
 })
+
+// ---------------------------------------------------------------------------
+// Projects. The same walk, a different status vocabulary, and a decision that
+// has to reach the tasks inside the project.
+// ---------------------------------------------------------------------------
+
+import {
+  applyProjectDecision,
+  cascadeProjectDecisionToTasks,
+  projectTriageQueue,
+  shouldRunProjectPlan,
+  tasksForProject,
+} from "./day-plan"
+import type { Project } from "./types"
+
+function proj(id: string, over: Partial<Project> = {}): Project {
+  return {
+    id,
+    name: `Project ${id}`,
+    status: "Ongoing",
+    createdAt: 0,
+    lastInteractionTime: 0,
+    ...over,
+  }
+}
+
+describe("projectTriageQueue", () => {
+  it("leaves finished projects out", () => {
+    const list = [proj("a"), proj("b", { status: "Done" }), proj("c", { status: "On Hold" })]
+    expect(projectTriageQueue(list).map((p) => p.id)).toEqual(["a", "c"])
+  })
+
+  it("puts the most recently touched project first", () => {
+    const list = [
+      proj("old", { lastInteractionTime: 100 }),
+      proj("new", { lastInteractionTime: 900 }),
+    ]
+    expect(projectTriageQueue(list).map((p) => p.id)).toEqual(["new", "old"])
+  })
+
+  it("does not mutate the array it was given", () => {
+    const list = [proj("a", { lastInteractionTime: 1 }), proj("b", { lastInteractionTime: 2 })]
+    projectTriageQueue(list)
+    expect(list.map((p) => p.id)).toEqual(["a", "b"])
+  })
+})
+
+describe("applyProjectDecision", () => {
+  const list = [proj("a"), proj("b", { status: "On Hold" })]
+
+  it("maps today onto Ongoing and later onto On Hold", () => {
+    expect(applyProjectDecision(list, "b", "today").find((p) => p.id === "b")!.status).toBe("Ongoing")
+    expect(applyProjectDecision(list, "a", "later").find((p) => p.id === "a")!.status).toBe("On Hold")
+  })
+
+  it("finishes a project on done", () => {
+    expect(applyProjectDecision(list, "a", "done").find((p) => p.id === "a")!.status).toBe("Done")
+  })
+
+  it("changes nothing on skip", () => {
+    expect(applyProjectDecision(list, "a", "skip")).toBe(list)
+  })
+
+  it("touches only the named project and does not mutate", () => {
+    const next = applyProjectDecision(list, "a", "done")
+    expect(next.find((p) => p.id === "b")!.status).toBe("On Hold")
+    expect(list.find((p) => p.id === "a")!.status).toBe("Ongoing")
+  })
+})
+
+describe("cascadeProjectDecisionToTasks", () => {
+  const tasks = [
+    task("t1", { projectId: "a", status: "In Progress" }),
+    task("t2", { projectId: "a", status: "To Do" }),
+    task("t3", { projectId: "b", status: "In Progress" }),
+  ]
+
+  it("finishing a project finishes its tasks", () => {
+    // Otherwise the task list fills with work that no longer exists.
+    const next = cascadeProjectDecisionToTasks(tasks, "a", "done")
+    expect(next.filter((t) => t.projectId === "a").every((t) => t.status === "Done")).toBe(true)
+  })
+
+  it("parking a project parks only the work in progress inside it", () => {
+    const next = cascadeProjectDecisionToTasks(tasks, "a", "later")
+    expect(next.find((t) => t.id === "t1")!.status).toBe("To Do")
+    expect(next.find((t) => t.id === "t2")!.status).toBe("To Do")
+  })
+
+  it("never touches another project's tasks", () => {
+    for (const d of ["done", "later", "today", "skip"] as const) {
+      const next = cascadeProjectDecisionToTasks(tasks, "a", d)
+      expect(next.find((t) => t.id === "t3")!.status).toBe("In Progress")
+    }
+  })
+
+  it("leaves tasks alone for today and skip", () => {
+    expect(cascadeProjectDecisionToTasks(tasks, "a", "today")).toBe(tasks)
+    expect(cascadeProjectDecisionToTasks(tasks, "a", "skip")).toBe(tasks)
+  })
+
+  it("does not mutate the tasks it was given", () => {
+    cascadeProjectDecisionToTasks(tasks, "a", "done")
+    expect(tasks.find((t) => t.id === "t1")!.status).toBe("In Progress")
+  })
+})
+
+describe("tasksForProject", () => {
+  const tasks = [
+    task("t1", { projectId: "a", status: "In Progress", lastInteractionTime: 100 }),
+    task("t2", { projectId: "a", status: "Done", lastInteractionTime: 900 }),
+    task("t3", { projectId: "a", status: "To Do", lastInteractionTime: 500 }),
+    task("t4", { projectId: "b", status: "To Do", lastInteractionTime: 999 }),
+  ]
+
+  it("returns only that project's unfinished tasks, most recent first", () => {
+    expect(tasksForProject(tasks, "a").map((t) => t.id)).toEqual(["t3", "t1"])
+  })
+
+  it("is empty for a project whose work is all finished", () => {
+    expect(tasksForProject([task("x", { projectId: "a", status: "Done" })], "a")).toEqual([])
+  })
+
+  it("is empty for a project with no tasks at all", () => {
+    expect(tasksForProject(tasks, "nope")).toEqual([])
+  })
+})
+
+describe("shouldRunProjectPlan", () => {
+  it("runs when a project is unfinished", () => {
+    expect(shouldRunProjectPlan([proj("a")])).toBe(true)
+  })
+
+  it("stays out of the way when there is nothing to triage", () => {
+    expect(shouldRunProjectPlan([])).toBe(false)
+    expect(shouldRunProjectPlan([proj("a", { status: "Done" })])).toBe(false)
+  })
+})
+
+describe("a full run through the project wizard", () => {
+  it("ends on a project whose tasks can be picked from", () => {
+    let projects = [
+      proj("site", { lastInteractionTime: 300 }),
+      proj("admin", { lastInteractionTime: 200 }),
+      proj("stale", { lastInteractionTime: 100 }),
+    ]
+    let tasks = [
+      task("t1", { projectId: "site", status: "To Do", lastInteractionTime: 10 }),
+      task("t2", { projectId: "site", status: "In Progress", lastInteractionTime: 20 }),
+      task("t3", { projectId: "stale", status: "In Progress" }),
+    ]
+
+    const queue = projectTriageQueue(projects)
+    expect(queue.map((p) => p.id)).toEqual(["site", "admin", "stale"])
+
+    let state = initialDayPlanState()
+    const run = [
+      ["site", "today"],
+      ["admin", "later"],
+      ["stale", "done"],
+    ] as const
+
+    for (const [id, decision] of run) {
+      projects = applyProjectDecision(projects, id, decision)
+      tasks = cascadeProjectDecisionToTasks(tasks, id, decision)
+      state = recordDecision(state, id, decision)
+    }
+
+    expect(planPhase(state, queue.length)).toBe("pick")
+    const candidates = candidatesForToday(queue, state.decisions)
+    expect(candidates.map((p) => p.id)).toEqual(["site"])
+    // One candidate, so the pick step is a confirmation.
+    expect(defaultChoice(candidates)).toBe("site")
+
+    // The finished project took its task with it.
+    expect(tasks.find((t) => t.id === "t3")!.status).toBe("Done")
+    // And the chosen project still has work to start.
+    expect(tasksForProject(tasks, "site").map((t) => t.id)).toEqual(["t2", "t1"])
+  })
+
+  it("can end on a chosen project that has no work left in it", () => {
+    const projects = [proj("empty")]
+    const tasks: Task[] = []
+    let state = initialDayPlanState()
+    state = recordDecision(state, "empty", "today")
+
+    const candidates = candidatesForToday(projectTriageQueue(projects), state.decisions)
+    expect(candidates.map((p) => p.id)).toEqual(["empty"])
+    // The wizard has to say so rather than activating nothing.
+    expect(tasksForProject(tasks, "empty")).toEqual([])
+  })
+})
