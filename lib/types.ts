@@ -11,6 +11,9 @@ export type SessionType = "focus" | "shortBreak" | "longBreak"
 export type TaskStatus = "To Do" | "In Progress" | "Done"
 export type ProjectStatus = "On Hold" | "Ongoing" | "Done"
 export type Priority = "Urgent" | "High" | "Medium" | "Low"
+/** The four triage answers. Named -Like so lib/day-plan.ts stays the owner
+ *  of the wizard vocabulary while lib/day-review.ts can record it. */
+export type TriageDecisionLike = "today" | "later" | "done" | "skip"
 
 export interface Project {
   id: string
@@ -81,6 +84,11 @@ export interface DailyStat {
   dayStartTime: number | null // timestamp when first activity started
   projectsWorked?: string[] // array of project IDs worked on this day
   projectPomodoros?: Record<string, number> // per-project pomodoro counts for this day
+  // The same, per task, added 2026-09-14 for the end-of-day post mortem,
+  // which needs to know what was actually worked on. Optional because days
+  // before that recorded projects only and cannot be backfilled.
+  tasksWorked?: string[]
+  taskPomodoros?: Record<string, number>
   // Posture tracking, added 2026-09-08 for Vitals. Optional because days
   // recorded before that have no posture history and cannot be backfilled.
   // Minutes are accumulated when a posture ENDS, so the stretch currently in

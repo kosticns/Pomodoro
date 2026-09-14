@@ -71,6 +71,7 @@ import type {
   Task,
   Settings,
   DailyStat,
+  Priority,
   TimerState,
   WorkdayTimer,
   PomodoroSession,
@@ -81,7 +82,15 @@ import { isWorkdayForToday } from "@/lib/workday"
 import { recordPostureHeld } from "@/lib/daily-stat"
 import { standingCadenceOf, shouldRemindPosture } from "@/lib/posture"
 import { shouldPromptNewDay, localHour, DEFAULT_DAY_START_HOUR, greeting } from "@/lib/day-start"
-import { shouldRunDayPlan } from "@/lib/day-plan"
+import { shouldRunDayPlan, type TriageDecision } from "@/lib/day-plan"
+import {
+  recordTaskWorked,
+  shouldPromptDayReview,
+  tasksTouchedToday,
+  findDayReview,
+  buildDayReview,
+  upsertDayReview,
+} from "@/lib/day-review"
 import { backupWarning, isBackupUrgent } from "@/lib/backup-freshness"
 import { nextSession, startOfCycle, isStaleTimerState } from "@/lib/session-cycle"
 import { buildBackupJSON, buildBackupCSV, backupFilename } from "@/lib/backup"
@@ -127,6 +136,7 @@ const PomodoroApp = () => {
     activeTask, setActiveTask,
     notes, setNotes,
     stats, setStats,
+    dayReviews, setDayReviews,
   } = useAppState()
 
   // Add state to track last completed session type for strict alternation
@@ -139,6 +149,9 @@ const PomodoroApp = () => {
   // state, and AppState re-renders every consumer when it changes.
   const [isDayPlanOpen, setIsDayPlanOpen] = useState(false)
   const [dayPlanMode, setDayPlanMode] = useState<DayPlanMode>("tasks")
+  // The end-of-day post mortem. Its queue is snapshotted when it opens, for
+  // the same reason the wizard's own queue is: answering changes task statuses.
+  const [reviewQueue, setReviewQueue] = useState<Task[]>([])
   // Which calendar day the start-of-day prompt was last handled for, saved so
   // it survives a reload and cannot reappear later the same day.
   const [lastPromptedDate, setLastPromptedDate] = useLocalStorage<string>("lastDayPromptDate", "")
@@ -164,8 +177,8 @@ const PomodoroApp = () => {
   }, [])
 
   const backupPayload = useCallback(
-    () => ({ settings, projects, tasks, stats, notes }),
-    [settings, projects, tasks, stats, notes],
+    () => ({ settings, projects, tasks, stats, notes, dayReviews }),
+    [settings, projects, tasks, stats, notes, dayReviews],
   )
 
   const downloadBackupJSON = useCallback(() => {
@@ -256,6 +269,56 @@ const PomodoroApp = () => {
 
   // Initialize workday timer
   const workdayTimer = useWorkdayTimer(settings, recordPosture)
+
+  // End-of-day post mortem.
+  //
+  // Polled on the same 30s cadence as the start-of-day prompt rather than
+  // hooked into the workday interval, which is cleared the moment it hits zero
+  // and may never run at all if the app was closed when the day ended. This
+  // way the review is waiting the next time the app is opened.
+  useEffect(() => {
+    const check = () => {
+      const today = getLocalDateStr()
+      const stat = stats.find((s) => s.date === today)
+      const dayStart = new Date(`${today}T00:00:00`).getTime()
+      const touched = tasksTouchedToday(tasks, stat, dayStart)
+      const complete =
+        (stat?.workdayCompleted ?? false) || workdayTimer.workdayProgress >= 100
+
+      if (
+        shouldPromptDayReview({
+          workdayCompleted: complete,
+          alreadyReviewed: !!findDayReview(dayReviews, today),
+          touchedCount: touched.length,
+        })
+      ) {
+        setReviewQueue(touched)
+        setDayPlanMode("review")
+        setIsDayPlanOpen(true)
+      }
+    }
+    check()
+    const id = setInterval(check, 30_000)
+    return () => clearInterval(id)
+  }, [stats, tasks, dayReviews, workdayTimer.workdayProgress])
+
+  /** Writes the post mortem, which tomorrow's backup then carries out. */
+  const handleReviewComplete = useCallback(
+    (decisions: Record<string, TriageDecision>, priorities: Record<string, Priority>) => {
+      const today = getLocalDateStr()
+      const review = buildDayReview({
+        date: today,
+        queue: reviewQueue,
+        decisions,
+        priorities,
+        projects,
+        stat: stats.find((s) => s.date === today),
+        completedAt: Date.now(),
+      })
+      setDayReviews((prev) => upsertDayReview(prev, review))
+    },
+    [reviewQueue, projects, stats, setDayReviews],
+  )
 
   // Fire the posture reminder. Runs off timeSincePostureChange, which the hook
   // already recomputes each tick, so no extra timer is needed.
@@ -366,6 +429,14 @@ const PomodoroApp = () => {
         ...existingProjectPom,
         [projectId]: (existingProjectPom[projectId] || 0) + 1,
       }
+      // The same, per task. The end-of-day post mortem asks about what was
+      // actually worked on, and the stat only knew about projects.
+      const updatedTasksWorked = recordTaskWorked(todayStats?.tasksWorked, completedTask.id)
+      const existingTaskPom = todayStats?.taskPomodoros || {}
+      const updatedTaskPom = {
+        ...existingTaskPom,
+        [completedTask.id]: (existingTaskPom[completedTask.id] || 0) + 1,
+      }
 
       if (todayStats) {
         setStats(
@@ -381,6 +452,8 @@ const PomodoroApp = () => {
                   dayStartTime: s.dayStartTime || now,
                   projectsWorked: updatedProjects,
                   projectPomodoros: updatedProjectPom,
+                  tasksWorked: updatedTasksWorked,
+                  taskPomodoros: updatedTaskPom,
                 }
               : s,
           ),
@@ -405,6 +478,8 @@ const PomodoroApp = () => {
   dayStartTime: now,
   projectsWorked: [projectId],
   projectPomodoros: { [projectId]: 1 },
+  tasksWorked: [completedTask.id],
+  taskPomodoros: { [completedTask.id]: 1 },
   },
         ])
       }
@@ -984,7 +1059,13 @@ const skipSession = useCallback(() => {
 
       {/* Prioritisation, straight after the start-of-day prompt. Also reachable
           from the Tasks tab, so there is one triage flow rather than two. */}
-      <DayPlanWizard open={isDayPlanOpen} onOpenChange={setIsDayPlanOpen} mode={dayPlanMode} />
+      <DayPlanWizard
+        open={isDayPlanOpen}
+        onOpenChange={setIsDayPlanOpen}
+        mode={dayPlanMode}
+        reviewQueue={reviewQueue}
+        onReviewComplete={handleReviewComplete}
+      />
     </div>
   )
 }

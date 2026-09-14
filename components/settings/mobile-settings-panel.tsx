@@ -41,7 +41,7 @@ export const MobileSettingsPanel = ({
   requestNotificationPermission: () => void
   workdayTimer: ReturnType<typeof useWorkdayTimer>
 }) => {
-  const { settings, setSettings, projects, setProjects, tasks, setTasks, stats, setStats, notes, setNotes } = useAppState()
+  const { settings, setSettings, projects, setProjects, tasks, setTasks, stats, setStats, notes, setNotes, dayReviews, setDayReviews } = useAppState()
   const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly">("weekly")
   const [isExporting, setIsExporting] = useState(false)
   // Same key the start-of-day prompt writes. These export buttons are the
@@ -78,7 +78,7 @@ export const MobileSettingsPanel = ({
     URL.revokeObjectURL(url)
   }
 
-  const backupPayload = () => ({ settings, projects, tasks, stats, notes })
+  const backupPayload = () => ({ settings, projects, tasks, stats, notes, dayReviews })
 
   const handleExportJSON = () => {
     triggerDownload(
@@ -120,6 +120,9 @@ export const MobileSettingsPanel = ({
   setTasks(data.tasks)
   setStats(data.stats)
   if (data.notes) setNotes(data.notes)
+  // Absent from anything exported before version 1.5, so guard it rather
+  // than wiping existing reviews when restoring an older file.
+  if (data.dayReviews) setDayReviews(data.dayReviews)
         
         setImportError(null)
         setImportSuccess(true)

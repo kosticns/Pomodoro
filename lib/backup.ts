@@ -1,6 +1,7 @@
 import type { DailyStat, Note, Project, Settings, Task } from "./types"
 import { vitalsForDay } from "./vitals"
 import { priorityOf } from "./priority"
+import type { DayReview } from "./day-review"
 
 /**
  * Backup building, in one place.
@@ -21,6 +22,9 @@ export interface BackupPayload {
   tasks: Task[]
   stats: DailyStat[]
   notes: Note[]
+  // End-of-day post mortems. Optional so an older caller still type-checks,
+  // but every caller in the app passes it.
+  dayReviews?: DayReview[]
 }
 
 /**
@@ -29,9 +33,9 @@ export interface BackupPayload {
  * 1.2 dropped Estimated Pomodoros, which the app no longer tracks. Restoring a
  * 1.0 or 1.1 file still works; the extra property is simply ignored.
  */
-// 1.4 adds task priority. 1.3 added project priority. 1.2 added notes, which
-// restore read but export had omitted entirely.
-export const BACKUP_VERSION = "1.4"
+// 1.5 adds the end-of-day post mortems. 1.4 added task priority, 1.3 project
+// priority, 1.2 notes, which restore read but export had omitted entirely.
+export const BACKUP_VERSION = "1.5"
 
 export function buildBackupJSON(payload: BackupPayload, now: Date = new Date()): string {
   return JSON.stringify(
@@ -45,6 +49,7 @@ export function buildBackupJSON(payload: BackupPayload, now: Date = new Date()):
       // Notes were absent from version 1.0 while the restore path already read
       // them, so notes could never survive a backup round trip.
       notes: payload.notes,
+      dayReviews: payload.dayReviews ?? [],
     },
     null,
     2,
@@ -125,6 +130,25 @@ export function buildBackupCSV(payload: BackupPayload, now: Date = new Date()): 
         v.longestStandStretch,
       ].join(","),
     )
+  }
+  lines.push("")
+
+  lines.push("=== DAY REVIEWS ===")
+  lines.push("Date,Task,Project,Decision,Priority,Pomodoros,Reviewed At")
+  for (const r of payload.dayReviews ?? []) {
+    for (const e of r.entries) {
+      lines.push(
+        [
+          r.date,
+          csvQuote(e.taskName),
+          csvQuote(e.projectName),
+          e.decision,
+          e.priority,
+          e.pomodoros,
+          new Date(r.completedAt).toISOString(),
+        ].join(","),
+      )
+    }
   }
   lines.push("")
 

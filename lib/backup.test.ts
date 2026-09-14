@@ -41,7 +41,7 @@ describe("buildBackupJSON", () => {
 
   it("declares the current version", () => {
     expect(JSON.parse(buildBackupJSON(payload(), AT)).version).toBe(BACKUP_VERSION)
-    expect(BACKUP_VERSION).toBe("1.4")
+    expect(BACKUP_VERSION).toBe("1.5")
   })
 
   it("carries project priority, so it survives a backup and restore", () => {
@@ -78,8 +78,8 @@ describe("buildBackupJSON", () => {
 describe("buildBackupCSV", () => {
   const csv = () => buildBackupCSV(payload(), AT)
 
-  it("has a section per data type, including notes", () => {
-    for (const section of ["=== PROJECTS ===", "=== TASKS ===", "=== DAILY STATS ===", "=== NOTES ==="]) {
+  it("has a section per data type, including notes and day reviews", () => {
+    for (const section of ["=== PROJECTS ===", "=== TASKS ===", "=== DAILY STATS ===", "=== DAY REVIEWS ===", "=== NOTES ==="]) {
       expect(csv()).toContain(section)
     }
   })
@@ -154,5 +154,40 @@ describe("backupFilename", () => {
   it("names the file by kind and date", () => {
     expect(backupFilename("json", "2026-09-08")).toBe("pomodoro-backup-2026-09-08.json")
     expect(backupFilename("csv", "2026-09-08")).toBe("pomodoro-backup-2026-09-08.csv")
+  })
+})
+
+describe("day reviews in the backup", () => {
+  const review = {
+    date: "2026-09-14",
+    completedAt: Date.parse("2026-09-14T18:00:00.000Z"),
+    totalPomodoros: 9,
+    workdayMinutes: 480,
+    entries: [
+      { taskId: "t1", taskName: "Write docs", projectId: "p1", projectName: "Neusatz Archive",
+        decision: "done" as const, priority: "High" as const, pomodoros: 6 },
+    ],
+  }
+
+  it("carries the reviews in the JSON, which is the point of recording them", () => {
+    const j = JSON.parse(buildBackupJSON(payload({ dayReviews: [review] }), AT))
+    expect(j.dayReviews).toHaveLength(1)
+    expect(j.dayReviews[0].entries[0].taskName).toBe("Write docs")
+  })
+
+  it("exports an empty array rather than omitting the key", () => {
+    expect(JSON.parse(buildBackupJSON(payload(), AT)).dayReviews).toEqual([])
+  })
+
+  it("writes one CSV row per reviewed task", () => {
+    const lines = buildBackupCSV(payload({ dayReviews: [review] }), AT).split("\n")
+    const header = lines[lines.indexOf("=== DAY REVIEWS ===") + 1]
+    expect(header).toBe("Date,Task,Project,Decision,Priority,Pomodoros,Reviewed At")
+    expect(lines[lines.indexOf("=== DAY REVIEWS ===") + 2]).toContain('"Write docs"')
+  })
+
+  it("escapes a comma in a task name rather than shifting columns", () => {
+    const withComma = { ...review, entries: [{ ...review.entries[0], taskName: "Docs, phase 2" }] }
+    expect(buildBackupCSV(payload({ dayReviews: [withComma] }), AT)).toContain('"Docs, phase 2"')
   })
 })

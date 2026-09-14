@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect } from "react"
 import { useLocalStorage } from "@/hooks/use-local-storage"
 import type { Settings, Project, Task, Note, DailyStat } from "./types"
+import type { DayReview } from "./day-review"
 import { DEFAULT_STANDING_CADENCE_MINUTES, needsCadenceMigration } from "./posture"
 import { DEFAULT_DAY_START_HOUR } from "./day-start"
 
@@ -41,6 +42,9 @@ interface AppState {
   setNotes: Setter<Note[]>
   stats: DailyStat[]
   setStats: Setter<DailyStat[]>
+  /** End-of-day post mortems, one per day. Exported with the backup. */
+  dayReviews: DayReview[]
+  setDayReviews: Setter<DayReview[]>
 }
 
 const AppStateContext = createContext<AppState | null>(null)
@@ -92,6 +96,11 @@ export function migrateStats(raw: any[]): DailyStat[] {
     dayStartTime: stat.dayStartTime || null,
     projectsWorked: stat.projectsWorked || [],
     projectPomodoros: stat.projectPomodoros || undefined,
+    // WARNING: this function rebuilds each stat from the list below and runs on
+    // every mount, so ANY field missing from it is silently erased from storage.
+    // Adding a field to DailyStat means adding it here too.
+    tasksWorked: stat.tasksWorked || [],
+    taskPomodoros: stat.taskPomodoros || undefined,
     // Posture fields default to 0 rather than undefined so the Vitals maths
     // never has to guard. A pre-2026-09-08 day legitimately has no posture
     // history, and 0 is the honest value for it.
@@ -110,6 +119,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [activeTask, setActiveTask] = useLocalStorage<Task | null>("activeTask", null)
   const [notes, setNotes] = useLocalStorage<Note[]>("notes", [])
   const [stats, setStats] = useLocalStorage<DailyStat[]>("stats", [])
+  const [dayReviews, setDayReviews] = useLocalStorage<DayReview[]>("dayReviews", [])
 
   // Backfill timestamps on projects saved before those fields existed.
   useEffect(() => {
@@ -157,6 +167,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     activeTask, setActiveTask,
     notes, setNotes,
     stats, setStats,
+    dayReviews, setDayReviews,
   }
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>

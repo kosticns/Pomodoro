@@ -12,6 +12,7 @@ import {
   Circle,
   Flag,
   FolderOpen,
+  Moon,
   Play,
   SkipForward,
   Sunrise,
@@ -46,9 +47,23 @@ import {
 import { PRIORITIES } from "@/lib/priority"
 import type { Priority } from "@/lib/types"
 
-export type DayPlanMode = "tasks" | "projects"
+export type DayPlanMode = "tasks" | "projects" | "review"
 
 /** Matches the badge colours used on the project cards. */
+/**
+ * What the summary calls each answer.
+ *
+ * The stored values are the wizard's own ("today", "later"), but at day's end
+ * the user was asked "Continuing" and "Parked", and echoing different words
+ * back at them reads as a different answer.
+ */
+const REVIEW_DECISION_LABEL: Record<TriageDecision, string> = {
+  today: "Continuing",
+  later: "Parked",
+  done: "Done",
+  skip: "Skipped",
+}
+
 const PRIORITY_BUTTON: Record<Priority, string> = {
   Urgent: "border-red-500/50 text-red-400 hover:bg-red-500/10",
   High: "border-orange-500/50 text-orange-400 hover:bg-orange-500/10",
@@ -78,10 +93,19 @@ export function DayPlanWizard({
   open,
   onOpenChange,
   mode = "tasks",
+  reviewQueue,
+  onReviewComplete,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   mode?: DayPlanMode
+  /** Review mode only: the tasks touched today, supplied by the caller. */
+  reviewQueue?: Task[]
+  /** Review mode only: called with everything the walk collected. */
+  onReviewComplete?: (
+    decisions: Record<string, TriageDecision>,
+    priorities: Record<string, Priority>,
+  ) => void
 }) {
   const { tasks, setTasks, projects, setProjects, setActiveTask } = useAppState()
   const [state, setState] = useState<DayPlanState>(initialDayPlanState)
@@ -101,13 +125,22 @@ export function DayPlanWizard({
   /** Projects mode only: the project confirmed on the pick step. */
   const [pickedProjectId, setPickedProjectId] = useState<string | null>(null)
   const [pickedTaskId, setPickedTaskId] = useState<string | null>(null)
+  /** Review mode: the priority answered for each task, kept for the log. */
+  const [reviewPriorities, setReviewPriorities] = useState<Record<string, Priority>>({})
 
   useEffect(() => {
     if (!open) return
-    setQueue(mode === "projects" ? projectTriageQueue(projects) : triageQueue(tasks))
+    setQueue(
+      mode === "review"
+        ? (reviewQueue ?? [])
+        : mode === "projects"
+          ? projectTriageQueue(projects)
+          : triageQueue(tasks),
+    )
     setState(initialDayPlanState())
     setPickedProjectId(null)
     setPickedTaskId(null)
+    setReviewPriorities({})
     // tasks/projects are deliberately not dependencies. This runs on open and
     // takes the list as it was at that moment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -130,12 +163,16 @@ export function DayPlanWizard({
     [tasks, pickedProjectId],
   )
 
-  const phase: "triage" | "pick" | "pickTask" | "empty" = pickedProjectId ? "pickTask" : basePhase
+  const phase: "triage" | "pick" | "pickTask" | "summary" | "empty" = pickedProjectId
+    ? "pickTask"
+    : mode === "review" && basePhase === "pick"
+      ? "summary"
+      : basePhase
 
   // With one candidate there is nothing to choose, so it is preselected and the
   // step becomes a confirmation.
   useEffect(() => {
-    if (phase !== "pick") return
+    if (phase !== "pick" || mode === "review") return
     setState((prev) =>
       prev.chosenTaskId ? prev : { ...prev, chosenTaskId: defaultChoice(candidates) },
     )
@@ -168,10 +205,13 @@ export function DayPlanWizard({
           applyTaskPriority(applyDecision(prev, current.id, decision), current.id, priority),
         )
       }
+      if (mode === "review") setReviewPriorities((prev) => ({ ...prev, [current.id]: priority }))
       setState((prev) => recordDecision(prev, current.id, decision))
     },
     [current, mode, state.pendingDecision, setTasks, setProjects],
   )
+
+  const reviewAnswered = queue.filter((t) => state.decisions[t.id]).length
 
   const projectNameOf = (id: string) => projects.find((p) => p.id === id)?.name
 
@@ -211,9 +251,17 @@ export function DayPlanWizard({
                   which is absolutely positioned at top-4 right-4. */}
               <div className="flex items-center justify-between mb-2 pr-6">
                 <div className="flex items-center gap-2">
-                  <Sunrise className={cn("h-5 w-5", isProjects ? "text-purple-400" : "text-cyan-400")} />
+                  {mode === "review" ? (
+                    <Moon className="h-5 w-5 text-indigo-300" />
+                  ) : (
+                    <Sunrise className={cn("h-5 w-5", isProjects ? "text-purple-400" : "text-cyan-400")} />
+                  )}
                   <DialogTitle className="font-semibold text-foreground text-base">
-                    {isProjects ? "Plan your projects" : "Plan your day"}
+                    {mode === "review"
+                      ? "How did today go?"
+                      : isProjects
+                        ? "Plan your projects"
+                        : "Plan your day"}
                   </DialogTitle>
                 </div>
                 <span className="text-sm text-muted-foreground">
@@ -273,7 +321,7 @@ export function DayPlanWizard({
               {step === "state" ? (
                 <>
                   <DialogDescription className="text-sm text-muted-foreground mb-4">
-                    Is this {noun} for today?
+                    {mode === "review" ? "Where did this task end up?" : `Is this ${noun} for today?`}
                   </DialogDescription>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -283,7 +331,7 @@ export function DayPlanWizard({
                       className="h-14 flex flex-col items-center gap-1 border-cyan-500/30 hover:bg-cyan-500/10"
                     >
                       <Play className="h-5 w-5 text-cyan-400" />
-                      <span className="text-xs">Today</span>
+                      <span className="text-xs">{mode === "review" ? "Continuing" : "Today"}</span>
                     </Button>
                     <Button
                       variant="outline"
@@ -291,7 +339,7 @@ export function DayPlanWizard({
                       className="h-14 flex flex-col items-center gap-1 border-muted-foreground/30 hover:bg-muted-foreground/10"
                     >
                       <Circle className="h-5 w-5 text-muted-foreground" />
-                      <span className="text-xs">Later</span>
+                      <span className="text-xs">{mode === "review" ? "Parked" : "Later"}</span>
                     </Button>
                     <Button
                       variant="outline"
@@ -321,8 +369,11 @@ export function DayPlanWizard({
               ) : (
                 <>
                   <DialogDescription className="text-sm text-muted-foreground mb-4">
-                    How important is it
-                    {isProjects ? "?" : " inside this project?"}
+                    {mode === "review"
+                      ? "How important is it going into tomorrow?"
+                      : isProjects
+                        ? "How important is it?"
+                        : "How important is it inside this project?"}
                   </DialogDescription>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -439,6 +490,59 @@ export function DayPlanWizard({
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Choose a different project
+            </Button>
+          </div>
+        ) : phase === "summary" ? (
+          <div className="px-5 py-5 min-w-0">
+            <div className="flex items-center gap-2 mb-1 pr-6">
+              <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+              <DialogTitle className="font-semibold text-foreground text-base">
+                Day recorded
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-sm text-muted-foreground mb-4">
+              {reviewAnswered} of {queue.length} {queue.length === 1 ? "task" : "tasks"}{" "}
+              reviewed. This goes out with tomorrow morning&apos;s backup.
+            </DialogDescription>
+
+            <div className="space-y-2 mb-5 max-h-[40vh] overflow-y-auto">
+              {queue
+                .filter((t) => state.decisions[t.id])
+                .map((t) => (
+                  <div
+                    key={t.id}
+                    className="rounded-lg border border-border/50 p-3 flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-medium text-foreground truncate">{t.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {projectNameOf((t as Task).projectId) ?? "No project"}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                      <Badge variant="outline" className="text-xs whitespace-nowrap">
+                        {REVIEW_DECISION_LABEL[state.decisions[t.id]]}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className={cn("text-xs", PRIORITY_BUTTON[reviewPriorities[t.id] ?? "Medium"])}
+                      >
+                        {reviewPriorities[t.id] ?? "Medium"}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            <Button
+              onClick={() => {
+                onReviewComplete?.(state.decisions, reviewPriorities)
+                onOpenChange(false)
+              }}
+              className="w-full h-12"
+            >
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              Save and finish
             </Button>
           </div>
         ) : phase === "pick" && candidates.length > 0 ? (
