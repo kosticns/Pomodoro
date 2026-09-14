@@ -31,6 +31,10 @@ pnpm test          # unit tests on the break/well-being maths
 pnpm typecheck     # tsc; the build enforces this too, but fail early and clearly
 pnpm build
 [ -f out/index.html ] || fail "out/index.html missing, build did not export"
+# The service worker is generated from this build's hashed filenames, so a
+# missing or stale one would cache 404s for every asset.
+[ -f out/sw.js ] || fail "out/sw.js missing, scripts/build-sw.mjs did not run"
+grep -q '"/index.html"' out/sw.js || fail "out/sw.js does not precache the shell"
 
 # The manifest promises these. Shipping without them gives a blank home-screen icon.
 for icon in icon-192x192.png icon-512x512.png; do

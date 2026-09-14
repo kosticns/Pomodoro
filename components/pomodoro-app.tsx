@@ -89,6 +89,7 @@ import { AppStateProvider, useAppState } from "@/lib/app-state"
 import { useLocalStorage, useStorageHealth } from "@/hooks/use-local-storage"
 import { clearStorageFailure } from "@/lib/storage-health"
 import { useNotifications } from "@/hooks/use-notifications"
+import { useServiceWorker } from "@/hooks/use-service-worker"
 import { useWorkdayTimer } from "@/hooks/use-workday-timer"
 import { CustomBarChart } from "@/components/charts/custom-bar-chart"
 import { CustomPieChart } from "@/components/charts/custom-pie-chart"
@@ -106,6 +107,8 @@ import { DesktopDashboard } from "@/components/desktop/desktop-dashboard"
 
 const PomodoroApp = () => {
   const [viewMode, setViewMode] = useState<"mobile" | "desktop">("mobile")
+  // Offline support. Silent by design; see hooks/use-service-worker.ts.
+  useServiceWorker()
   // CHANGE START: Removed "breaks" from navigation
   const [activeView, setActiveView] = useState("timer")
   const {
