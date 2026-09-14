@@ -10,6 +10,7 @@ export type SessionType = "focus" | "shortBreak" | "longBreak"
 // therefore an NaN comparator.
 export type TaskStatus = "To Do" | "In Progress" | "Done"
 export type ProjectStatus = "On Hold" | "Ongoing" | "Done"
+export type Priority = "Urgent" | "High" | "Medium" | "Low"
 
 export interface Project {
   id: string
@@ -17,6 +18,10 @@ export interface Project {
   status: ProjectStatus
   createdAt: number
   lastInteractionTime: number
+  // Optional so projects saved before priority existed do not read as a bogus
+  // value. Resolve it with priorityOf() rather than reading this directly;
+  // see lib/priority.ts for why there is no migration.
+  priority?: Priority
 }
 
 export interface Note {

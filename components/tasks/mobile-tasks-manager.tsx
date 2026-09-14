@@ -21,6 +21,7 @@ import {
   Circle,
   CheckCircle2,
   StickyNote,
+  Flag,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -30,7 +31,20 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import type { TaskStatus, ProjectStatus, Project, Note, Task } from "@/lib/types"
+import type { TaskStatus, ProjectStatus, Priority, Project, Note, Task } from "@/lib/types"
+import { PRIORITIES, DEFAULT_PRIORITY, priorityOf, compareByPriority } from "@/lib/priority"
+
+/**
+ * Badge styling per level. Deliberately not in lib/priority.ts, which stays
+ * free of presentation. Urgent and High carry a border as well as a colour, so
+ * the level is not signalled by hue alone.
+ */
+const PRIORITY_CLASSES: Record<Priority, string> = {
+  Urgent: "border-red-500/60 text-red-400 bg-red-500/10",
+  High: "border-orange-500/50 text-orange-400 bg-orange-500/10",
+  Medium: "border-muted-foreground/40 text-muted-foreground",
+  Low: "border-muted-foreground/25 text-muted-foreground/70",
+}
 
 export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => void }) => {
   const { projects, setProjects, tasks, setTasks, activeTask, setActiveTask, notes } = useAppState()
@@ -47,6 +61,7 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
   const [newTaskName, setNewTaskName] = useState("")
   const [newTaskProjectId, setNewTaskProjectId] = useState<string>("")
   const [newProjectName, setNewProjectName] = useState("")
+  const [newProjectPriority, setNewProjectPriority] = useState<Priority>(DEFAULT_PRIORITY)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [menuTask, setMenuTask] = useState<Task | null>(null)
   
@@ -226,12 +241,25 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
       status: "Ongoing",
       createdAt: Date.now(),
       lastInteractionTime: Date.now(),
+      priority: newProjectPriority,
     }
 
     setProjects([...projects, newProject])
     setNewTaskProjectId(newProject.id)
     setNewProjectName("")
+    setNewProjectPriority(DEFAULT_PRIORITY)
     setIsAddProjectDialogOpen(false)
+  }
+
+  // Set a project's priority from the row menu, without opening the editor.
+  const handleUpdateProjectPriority = (priority: Priority) => {
+    if (!menuProject) return
+    setProjects(
+      projects.map((p) =>
+        p.id === menuProject.id ? { ...p, priority, lastInteractionTime: Date.now() } : p,
+      ),
+    )
+    setMenuProject(null)
   }
 
   // Update task status
@@ -269,6 +297,8 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
   // Sort projects
   const sortedProjects = [...projects].sort((a, b) => {
     switch (projectSortBy) {
+      case "priority":
+        return compareByPriority(a, b)
       case "status": {
         const order = { Ongoing: 0, "On Hold": 1, Done: 2 }
         return order[a.status] - order[b.status]
@@ -436,6 +466,7 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
                 </div>
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="priority">By Priority</SelectItem>
                 <SelectItem value="status">By Status</SelectItem>
                 <SelectItem value="name">By Name</SelectItem>
                 <SelectItem value="tasks">Most Tasks</SelectItem>
@@ -776,6 +807,17 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
                               </div>
                               
                               <div className="flex items-center gap-1.5 flex-wrap">
+                                {/* Priority. A flag icon carries the level as
+                                    well as the colour, so it does not rely on
+                                    hue alone. */}
+                                <Badge
+                                  variant="outline"
+                                  className={cn("text-xs px-1.5", PRIORITY_CLASSES[priorityOf(project)])}
+                                >
+                                  <Flag className="h-2.5 w-2.5 mr-1" />
+                                  {priorityOf(project)}
+                                </Badge>
+
                                 {/* Status Badge */}
                                 <Badge
                                   variant="outline"
@@ -912,9 +954,27 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
       <Dialog open={!!menuProject} onOpenChange={() => setMenuProject(null)}>
         <DialogContent className="w-[90vw] max-w-xs p-0 gap-0">
           <div className="py-1">
-            <div className="px-4 py-2 text-xs font-semibold text-muted-foreground border-b border-border/50">
+            {/* A DialogTitle, not a styled div: Radix warns at runtime that a
+                DialogContent without one is unlabelled for screen readers. */}
+            <DialogTitle className="px-4 py-2 text-xs font-semibold text-muted-foreground border-b border-border/50">
               Project Actions
+            </DialogTitle>
+
+            <div className="px-2 py-1">
+              <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">Set Priority</div>
+              {PRIORITIES.filter((p) => menuProject && p !== priorityOf(menuProject)).map((priority) => (
+                <button
+                  key={priority}
+                  onClick={() => handleUpdateProjectPriority(priority)}
+                  className="w-full text-left px-3 py-2 text-sm rounded hover:bg-primary/10 transition-colors flex items-center gap-2"
+                >
+                  <Flag className={cn("h-3.5 w-3.5", PRIORITY_CLASSES[priority].split(" ")[1])} />
+                  {priority}
+                </button>
+              ))}
             </div>
+
+            <div className="h-px bg-border/50 mx-2" />
 
             <div className="px-2 py-1">
               <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">Change Status</div>
@@ -975,6 +1035,27 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
             </div>
             
             <div className="space-y-2">
+              <Label htmlFor="edit-project-priority">Priority</Label>
+              <Select
+                value={editingProject ? priorityOf(editingProject) : DEFAULT_PRIORITY}
+                onValueChange={(priority: Priority) =>
+                  setEditingProject(editingProject ? { ...editingProject, priority } : null)
+                }
+              >
+                <SelectTrigger id="edit-project-priority">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITIES.map((priority) => (
+                    <SelectItem key={priority} value={priority}>
+                      {priority}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="edit-project-status">Status</Label>
               <Select
                 value={editingProject?.status}
@@ -1007,9 +1088,11 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
       <Dialog open={!!menuTask} onOpenChange={() => setMenuTask(null)}>
         <DialogContent className="w-[90vw] max-w-xs p-0 gap-0">
           <div className="py-1">
-            <div className="px-4 py-2 text-xs font-semibold text-muted-foreground border-b border-border/50">
+            {/* A DialogTitle, not a styled div: Radix warns at runtime that a
+                DialogContent without one is unlabelled for screen readers. */}
+            <DialogTitle className="px-4 py-2 text-xs font-semibold text-muted-foreground border-b border-border/50">
               Task Actions
-            </div>
+            </DialogTitle>
 
             <div className="px-2 py-1">
               {menuTask && activeTask?.id !== menuTask.id && (
@@ -1138,6 +1221,22 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
                 }}
                 autoFocus
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="new-project-priority">Priority</Label>
+              <Select value={newProjectPriority} onValueChange={(p: Priority) => setNewProjectPriority(p)}>
+                <SelectTrigger id="new-project-priority">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITIES.map((priority) => (
+                    <SelectItem key={priority} value={priority}>
+                      {priority}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
@@ -1271,7 +1370,7 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Sunrise className="h-5 w-5 text-purple-400" />
-                <span className="font-semibold text-foreground">Project Review</span>
+                <DialogTitle className="font-semibold text-foreground text-base">Project Review</DialogTitle>
               </div>
               <span className="text-sm text-muted-foreground">
                 {projectDailyReviewIndex + 1} of {incompleteProjects.length}
@@ -1365,7 +1464,7 @@ export const MobileTasksManager = ({ onStartDayPlan }: { onStartDayPlan: () => v
           <div className="w-16 h-16 rounded-full bg-purple-500/10 border border-purple-500/30 flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="h-8 w-8 text-purple-400" />
           </div>
-          <h3 className="text-xl font-bold text-foreground mb-2">Project Review Complete</h3>
+          <DialogTitle className="text-xl font-bold text-foreground mb-2">Project Review Complete</DialogTitle>
           <p className="text-sm text-muted-foreground mb-6">
             You&apos;ve reviewed all {incompleteProjects.length} projects. Have a productive day!
           </p>

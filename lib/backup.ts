@@ -1,5 +1,6 @@
 import type { DailyStat, Note, Project, Settings, Task } from "./types"
 import { vitalsForDay } from "./vitals"
+import { priorityOf } from "./priority"
 
 /**
  * Backup building, in one place.
@@ -28,7 +29,9 @@ export interface BackupPayload {
  * 1.2 dropped Estimated Pomodoros, which the app no longer tracks. Restoring a
  * 1.0 or 1.1 file still works; the extra property is simply ignored.
  */
-export const BACKUP_VERSION = "1.2"
+// 1.3 adds project priority. 1.2 added notes, which restore read but export
+// had omitted entirely.
+export const BACKUP_VERSION = "1.3"
 
 export function buildBackupJSON(payload: BackupPayload, now: Date = new Date()): string {
   return JSON.stringify(
@@ -63,9 +66,14 @@ export function buildBackupCSV(payload: BackupPayload, now: Date = new Date()): 
   lines.push("")
 
   lines.push("=== PROJECTS ===")
-  lines.push("ID,Name,Status,Created At")
+  // The JSON export carries projects wholesale, so a new field rides along on
+  // its own. CSV names its columns, so priority has to be added here or it is
+  // silently dropped from the spreadsheet.
+  lines.push("ID,Name,Status,Priority,Created At")
   for (const p of projects) {
-    lines.push(`${p.id},${csvQuote(p.name)},${p.status},${new Date(p.createdAt).toISOString()}`)
+    lines.push(
+      `${p.id},${csvQuote(p.name)},${p.status},${priorityOf(p)},${new Date(p.createdAt).toISOString()}`,
+    )
   }
   lines.push("")
 

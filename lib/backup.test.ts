@@ -41,7 +41,16 @@ describe("buildBackupJSON", () => {
 
   it("declares the current version", () => {
     expect(JSON.parse(buildBackupJSON(payload(), AT)).version).toBe(BACKUP_VERSION)
-    expect(BACKUP_VERSION).toBe("1.2")
+    expect(BACKUP_VERSION).toBe("1.3")
+  })
+
+  it("carries project priority, so it survives a backup and restore", () => {
+    const withPriority = payload({
+      projects: [
+        { id: "p1", name: "Urgent thing", status: "Ongoing", createdAt: 1, lastInteractionTime: 1, priority: "Urgent" },
+      ],
+    })
+    expect(JSON.parse(buildBackupJSON(withPriority, AT)).projects[0].priority).toBe("Urgent")
   })
 
   it("carries the posture fields so Vitals survive a backup", () => {
@@ -73,6 +82,31 @@ describe("buildBackupCSV", () => {
     for (const section of ["=== PROJECTS ===", "=== TASKS ===", "=== DAILY STATS ===", "=== NOTES ==="]) {
       expect(csv()).toContain(section)
     }
+  })
+
+  it("gives projects a Priority column, which the named columns would drop", () => {
+    const lines = csv().split("\n")
+    const header = lines[lines.indexOf("=== PROJECTS ===") + 1]
+    expect(header).toBe("ID,Name,Status,Priority,Created At")
+  })
+
+  it("writes the resolved priority, so a project saved before the field reads as Medium", () => {
+    const lines = csv().split("\n")
+    const row = lines[lines.indexOf("=== PROJECTS ===") + 2]
+    expect(row.split(",")[3]).toBe("Medium")
+  })
+
+  it("writes a set priority through", () => {
+    const withPriority = buildBackupCSV(
+      payload({
+        projects: [
+          { id: "p1", name: "Thing", status: "Ongoing", createdAt: 1, lastInteractionTime: 1, priority: "Urgent" },
+        ],
+      }),
+      AT,
+    )
+    const lines = withPriority.split("\n")
+    expect(lines[lines.indexOf("=== PROJECTS ===") + 2].split(",")[3]).toBe("Urgent")
   })
 
   it("carries the six Vitals columns per day", () => {
