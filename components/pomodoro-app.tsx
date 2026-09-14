@@ -851,7 +851,12 @@ const skipSession = useCallback(() => {
                 className={cn(
                   // border-t-2 gives the active tab a non-colour indicator, so
                   // the selected state does not rely on hue alone.
-                  "flex-1 flex flex-col items-center justify-center h-16 rounded-none space-y-1 transition-colors min-w-0 border-t-2",
+                  // The Button size variant applies has-[>svg]:px-3, and this tab
+                  // contains an icon, so it was getting 12px each side and leaving
+                  // only 51px for a label wanting 68px: "Settings" and "Breaks"
+                  // ellipsised. A plain px-0 is a different key to tailwind-merge
+                  // and does not override a variant selector, so match the selector.
+                  "flex-1 flex flex-col items-center justify-center h-16 rounded-none space-y-1 transition-colors min-w-0 border-t-2 has-[>svg]:px-0.5",
                   activeView === item.id
                     ? "text-primary bg-primary/10 border-t-primary"
                     : "text-muted-foreground border-t-transparent hover:text-foreground hover:bg-muted/50",
@@ -859,7 +864,10 @@ const skipSession = useCallback(() => {
                 onClick={() => setActiveView(item.id)}
               >
                 <item.icon className={cn("h-5 w-5", activeView === item.id && "text-glow")} />
-                <span className="text-xs font-medium">{item.label}</span>
+                {/* max-w-full + truncate so the widest label ("Settings" in this
+                    display font) cannot push past its tab and off a 320px
+                    screen. Fits outright at 360px and above. */}
+                <span className="text-xs font-medium max-w-full truncate">{item.label}</span>
               </Button>
             ))}
           </nav>

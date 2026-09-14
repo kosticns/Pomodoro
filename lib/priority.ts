@@ -1,4 +1,4 @@
-import type { Priority, Project } from "./types"
+import type { Priority, Project, Task } from "./types"
 
 /**
  * Project priority: Urgent, High, Medium, Low.
@@ -22,9 +22,13 @@ export const DEFAULT_PRIORITY: Priority = "Medium"
 /** Sort weight. Urgent first, Low last. */
 const RANK: Record<Priority, number> = { Urgent: 0, High: 1, Medium: 2, Low: 3 }
 
-/** A project's priority, falling back for anything unset or unrecognised. */
-export function priorityOf(project: Pick<Project, "priority">): Priority {
-  const p = project.priority
+/**
+ * A project's or task's priority, falling back for anything unset or
+ * unrecognised. Both carry the same four levels; what differs is what they
+ * rank against. See compareByProjectThenTask.
+ */
+export function priorityOf(item: { priority?: Priority }): Priority {
+  const p = item.priority
   return p && PRIORITIES.includes(p) ? p : DEFAULT_PRIORITY
 }
 
@@ -43,6 +47,39 @@ export function compareByPriority(
 ): number {
   const byRank = priorityRank(a.priority) - priorityRank(b.priority)
   if (byRank !== 0) return byRank
+  return (b.lastInteractionTime || 0) - (a.lastInteractionTime || 0)
+}
+
+/**
+ * Rank tasks the way Mickey described: project priority first, then task
+ * priority inside it.
+ *
+ * A task's own priority only ranks it against its siblings. An Urgent task in
+ * a Low project still comes after a Low task in an Urgent project, because the
+ * project decides which work matters today and the task only decides the order
+ * within that work.
+ *
+ * Ties fall through to recent activity so the order is stable and useful
+ * rather than arbitrary.
+ */
+export function compareByProjectThenTask(
+  a: Pick<Task, "priority" | "projectId" | "lastInteractionTime">,
+  b: Pick<Task, "priority" | "projectId" | "lastInteractionTime">,
+  projects: Array<Pick<Project, "id" | "priority">>,
+): number {
+  const rankOfProject = (id: string) => {
+    const project = projects.find((p) => p.id === id)
+    // A task whose project is missing sorts as if the project were Medium,
+    // rather than crashing or silently winning.
+    return priorityRank(project?.priority)
+  }
+
+  const byProject = rankOfProject(a.projectId) - rankOfProject(b.projectId)
+  if (byProject !== 0) return byProject
+
+  const byTask = priorityRank(a.priority) - priorityRank(b.priority)
+  if (byTask !== 0) return byTask
+
   return (b.lastInteractionTime || 0) - (a.lastInteractionTime || 0)
 }
 

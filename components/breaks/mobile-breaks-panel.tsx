@@ -91,7 +91,10 @@ export const MobileBreaksPanel = () => {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-border/50 bg-background/95 backdrop-blur">
+      {/* flex-wrap: the three period pills need ~230px in this display font
+          and the row leaves under 190px beside the title on a narrow phone,
+          so "30 Days" ran off the screen. Stays on one row where it fits. */}
+      <div className="flex flex-wrap items-center justify-between gap-y-2 p-3 border-b border-border/50 bg-background/95 backdrop-blur">
         <div className="flex items-center gap-2">
           <Coffee className="h-5 w-5 text-cyan-400" />
           <h1 className="text-xl font-bold text-primary">Breaks</h1>
@@ -104,7 +107,7 @@ export const MobileBreaksPanel = () => {
               key={period}
               onClick={() => setViewPeriod(period)}
               className={cn(
-                "px-3 py-1 text-xs font-medium rounded-md transition-all capitalize",
+                "px-2.5 py-1 text-xs font-medium rounded-md transition-all capitalize whitespace-nowrap",
                 viewPeriod === period
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground"

@@ -29,9 +29,9 @@ export interface BackupPayload {
  * 1.2 dropped Estimated Pomodoros, which the app no longer tracks. Restoring a
  * 1.0 or 1.1 file still works; the extra property is simply ignored.
  */
-// 1.3 adds project priority. 1.2 added notes, which restore read but export
-// had omitted entirely.
-export const BACKUP_VERSION = "1.3"
+// 1.4 adds task priority. 1.3 added project priority. 1.2 added notes, which
+// restore read but export had omitted entirely.
+export const BACKUP_VERSION = "1.4"
 
 export function buildBackupJSON(payload: BackupPayload, now: Date = new Date()): string {
   return JSON.stringify(
@@ -78,10 +78,10 @@ export function buildBackupCSV(payload: BackupPayload, now: Date = new Date()): 
   lines.push("")
 
   lines.push("=== TASKS ===")
-  lines.push("ID,Name,Project ID,Status,Completed Pomodoros")
+  lines.push("ID,Name,Project ID,Status,Priority,Completed Pomodoros")
   for (const t of tasks) {
     lines.push(
-      `${t.id},${csvQuote(t.name)},${t.projectId},${t.status},${t.completedPomodoros}`,
+      `${t.id},${csvQuote(t.name)},${t.projectId},${t.status},${priorityOf(t)},${t.completedPomodoros}`,
     )
   }
   lines.push("")

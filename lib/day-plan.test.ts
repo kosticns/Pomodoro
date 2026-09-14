@@ -89,12 +89,12 @@ describe("applyDecision", () => {
 
 describe("planPhase", () => {
   it("triages while there are tasks left", () => {
-    expect(planPhase({ index: 0, decisions: {}, chosenTaskId: null }, 3)).toBe("triage")
-    expect(planPhase({ index: 2, decisions: {}, chosenTaskId: null }, 3)).toBe("triage")
+    expect(planPhase({ index: 0, decisions: {}, chosenTaskId: null, pendingDecision: null }, 3)).toBe("triage")
+    expect(planPhase({ index: 2, decisions: {}, chosenTaskId: null, pendingDecision: null }, 3)).toBe("triage")
   })
 
   it("moves to the pick step once the queue is walked", () => {
-    expect(planPhase({ index: 3, decisions: {}, chosenTaskId: null }, 3)).toBe("pick")
+    expect(planPhase({ index: 3, decisions: {}, chosenTaskId: null, pendingDecision: null }, 3)).toBe("pick")
   })
 
   it("reports empty when there is nothing to triage", () => {
@@ -164,7 +164,7 @@ describe("recordDecision", () => {
 
 describe("stepBack", () => {
   it("goes back one task", () => {
-    expect(stepBack({ index: 2, decisions: {}, chosenTaskId: null }).index).toBe(1)
+    expect(stepBack({ index: 2, decisions: {}, chosenTaskId: null, pendingDecision: null }).index).toBe(1)
   })
 
   it("stops at the first task rather than going negative", () => {
@@ -172,7 +172,7 @@ describe("stepBack", () => {
   })
 
   it("keeps decisions, so going back shows what was chosen", () => {
-    const state = { index: 1, decisions: { a: "today" as const }, chosenTaskId: null }
+    const state = { index: 1, decisions: { a: "today" as const }, chosenTaskId: null, pendingDecision: null }
     expect(stepBack(state).decisions).toEqual({ a: "today" })
   })
 })
@@ -426,5 +426,142 @@ describe("a full run through the project wizard", () => {
     expect(candidates.map((p) => p.id)).toEqual(["empty"])
     // The wizard has to say so rather than activating nothing.
     expect(tasksForProject(tasks, "empty")).toEqual([])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Two questions per item: state, then priority.
+// ---------------------------------------------------------------------------
+
+import {
+  applyProjectPriority,
+  applyTaskPriority,
+  beginDecision,
+  canStepBack,
+  orderTasksForPicking,
+  triageStep,
+} from "./day-plan"
+
+describe("the two-question walk", () => {
+  it("shows the state question first", () => {
+    expect(triageStep(initialDayPlanState())).toBe("state")
+  })
+
+  it("answering the state question reveals the priority question for the same item", () => {
+    const s = beginDecision(initialDayPlanState(), "today")
+    expect(triageStep(s)).toBe("priority")
+    // Crucially it has NOT advanced; the same item is still on screen.
+    expect(s.index).toBe(0)
+    expect(s.decisions).toEqual({})
+  })
+
+  it("answering the priority question records the decision and advances", () => {
+    let s = beginDecision(initialDayPlanState(), "today")
+    s = recordDecision(s, "a", "today")
+    expect(s.index).toBe(1)
+    expect(s.decisions).toEqual({ a: "today" })
+    expect(triageStep(s)).toBe("state")
+  })
+
+  it("asks both questions even for items being parked or finished", () => {
+    // Mickey's call: priorities stay accurate across the whole backlog, not
+    // just today's work.
+    for (const decision of ["today", "later", "done", "skip"] as const) {
+      expect(triageStep(beginDecision(initialDayPlanState(), decision))).toBe("priority")
+    }
+  })
+
+  it("Back from the priority question returns to the state question, same item", () => {
+    // A mistaken tap costs one tap to undo rather than skipping the item.
+    const s = beginDecision(initialDayPlanState(), "done")
+    const back = stepBack(s)
+    expect(triageStep(back)).toBe("state")
+    expect(back.index).toBe(0)
+  })
+
+  it("Back from the state question goes to the previous item", () => {
+    let s = recordDecision(beginDecision(initialDayPlanState(), "today"), "a", "today")
+    expect(s.index).toBe(1)
+    s = stepBack(s)
+    expect(s.index).toBe(0)
+    expect(triageStep(s)).toBe("state")
+  })
+
+  it("knows when Back would do nothing", () => {
+    expect(canStepBack(initialDayPlanState())).toBe(false)
+    expect(canStepBack(beginDecision(initialDayPlanState(), "today"))).toBe(true)
+    expect(canStepBack({ ...initialDayPlanState(), index: 2 })).toBe(true)
+  })
+
+  it("does not mutate the state it was given", () => {
+    const s = initialDayPlanState()
+    beginDecision(s, "today")
+    expect(s.pendingDecision).toBeNull()
+  })
+})
+
+describe("applyTaskPriority / applyProjectPriority", () => {
+  it("sets a task's priority and leaves its siblings alone", () => {
+    const tasks = [task("a"), task("b")]
+    const next = applyTaskPriority(tasks, "a", "Urgent")
+    expect(next.find((t) => t.id === "a")!.priority).toBe("Urgent")
+    expect(next.find((t) => t.id === "b")!.priority).toBeUndefined()
+  })
+
+  it("sets a project's priority", () => {
+    const projects = [proj("a"), proj("b")]
+    const next = applyProjectPriority(projects, "b", "Low")
+    expect(next.find((p) => p.id === "b")!.priority).toBe("Low")
+  })
+
+  it("does not mutate", () => {
+    const tasks = [task("a")]
+    applyTaskPriority(tasks, "a", "Urgent")
+    expect(tasks[0].priority).toBeUndefined()
+  })
+})
+
+describe("tasksForProject ordering", () => {
+  it("orders by task priority, because the project is constant inside it", () => {
+    const tasks = [
+      task("low", { projectId: "p", priority: "Low" }),
+      task("urgent", { projectId: "p", priority: "Urgent" }),
+      task("medium", { projectId: "p" }),
+    ]
+    expect(tasksForProject(tasks, "p").map((t) => t.id)).toEqual(["urgent", "medium", "low"])
+  })
+
+  it("still leaves finished tasks out", () => {
+    const tasks = [
+      task("done", { projectId: "p", status: "Done", priority: "Urgent" }),
+      task("open", { projectId: "p", priority: "Low" }),
+    ]
+    expect(tasksForProject(tasks, "p").map((t) => t.id)).toEqual(["open"])
+  })
+})
+
+describe("orderTasksForPicking", () => {
+  it("offers the highest project's work first, then by task priority", () => {
+    const projects = [
+      proj("big", { priority: "Urgent" }),
+      proj("small", { priority: "Low" }),
+    ]
+    const tasks = [
+      task("smallUrgent", { projectId: "small", priority: "Urgent" }),
+      task("bigLow", { projectId: "big", priority: "Low" }),
+      task("bigHigh", { projectId: "big", priority: "High" }),
+    ]
+    expect(orderTasksForPicking(tasks, projects).map((t) => t.id)).toEqual([
+      "bigHigh",
+      "bigLow",
+      "smallUrgent",
+    ])
+  })
+
+  it("does not mutate the array it was given", () => {
+    const projects = [proj("p")]
+    const tasks = [task("b", { projectId: "p", priority: "Low" }), task("a", { projectId: "p", priority: "Urgent" })]
+    orderTasksForPicking(tasks, projects)
+    expect(tasks.map((t) => t.id)).toEqual(["b", "a"])
   })
 })

@@ -101,12 +101,17 @@ export const MobileTaskSelector = () => {
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <Button variant="ghost" className="w-full justify-between text-left p-4 h-auto">
-            <div className="flex flex-col items-start">
+          <Button variant="ghost" className="w-full justify-between text-left p-4 h-auto gap-2">
+            {/* min-w-0 lets this column shrink so a long task name truncates.
+                Without it the name sets the width and pushed the chevron 100px
+                off the right of a 375px screen. */}
+            <div className="flex flex-col items-start min-w-0 flex-1">
               <span className="text-xs text-muted-foreground">Current Task</span>
-              <span className="text-sm font-medium">{activeTask ? activeTask.name : "No task selected"}</span>
+              <span className="text-sm font-medium truncate w-full">
+                {activeTask ? activeTask.name : "No task selected"}
+              </span>
             </div>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
           </Button>
         </SheetTrigger>
         <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0">

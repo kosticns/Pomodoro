@@ -500,8 +500,12 @@ export const MobileTimerComponent = ({
                 The old fixed 180px spilled 21px past the circle on a 375x667
                 phone, where the ring is only 193px across. */}
             {activeTask && sessionType === "focus" && (
-              <div className="mt-2 text-center px-3">
-                <div className="text-xs sm:text-sm text-foreground/90 font-semibold truncate max-w-[70%] mx-auto">{activeTask.name}</div>
+              // The cap belongs on THIS wrapper, not the name inside it. The
+              // wrapper is sized by its content, so a 70% cap on the child was
+              // 70% of whatever width the long name had already forced, and a
+              // long task name ran past both the ring and the screen.
+              <div className="mt-2 text-center px-3 max-w-[70%]">
+                <div className="text-xs sm:text-sm text-foreground/90 font-semibold truncate">{activeTask.name}</div>
                 <div className="text-[10px] sm:text-xs text-foreground/60 mt-0.5 font-mono tracking-wide">
                   {projects.find((p) => p.id === activeTask.projectId)?.name || "Unknown Project"}
                 </div>

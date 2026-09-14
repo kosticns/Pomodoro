@@ -383,7 +383,7 @@ export const MobileTasksManager = ({
               <span className="text-sm">Plan</span>
             </Button>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[168px] h-9 bg-background/50 border-primary/30">
+              <SelectTrigger className="w-[140px] sm:w-[168px] h-9 bg-background/50 border-primary/30">
                 {/* min-w-0 lets this shrink inside the fixed-width trigger.
                     Without it the flex item keeps its content width, so the
                     label and the chevron spilled 38px and 62px past the
@@ -420,7 +420,7 @@ export const MobileTasksManager = ({
               <span className="text-sm">Plan</span>
             </Button>
             <Select value={projectSortBy} onValueChange={setProjectSortBy}>
-              <SelectTrigger className="w-[168px] h-9 bg-background/50 border-primary/30">
+              <SelectTrigger className="w-[140px] sm:w-[168px] h-9 bg-background/50 border-primary/30">
                 {/* min-w-0 lets this shrink inside the fixed-width trigger.
                     Without it the flex item keeps its content width, so the
                     label and the chevron spilled 38px and 62px past the
@@ -495,42 +495,42 @@ export const MobileTasksManager = ({
         <button
           onClick={() => setViewTab("active")}
           className={cn(
-            "flex-1 px-4 py-2.5 text-sm font-medium transition-all relative",
+            "flex-1 min-w-0 px-2 sm:px-4 py-2.5 text-sm font-medium transition-all relative",
             viewTab === "active"
               ? "text-primary border-b-2 border-primary bg-primary/5"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
           )}
         >
           Active
-          <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/30">
+          <span className="ml-1.5 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full border border-primary/30">
             {activeTaskCount}
           </span>
         </button>
         <button
           onClick={() => setViewTab("done")}
           className={cn(
-            "flex-1 px-4 py-2.5 text-sm font-medium transition-all relative",
+            "flex-1 min-w-0 px-2 sm:px-4 py-2.5 text-sm font-medium transition-all relative",
             viewTab === "done"
               ? "text-primary border-b-2 border-primary bg-primary/5"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
           )}
         >
           Done
-          <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/30">
+          <span className="ml-1.5 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full border border-primary/30">
             {doneTaskCount}
           </span>
         </button>
         <button
           onClick={() => setViewTab("all")}
           className={cn(
-            "flex-1 px-4 py-2.5 text-sm font-medium transition-all relative",
+            "flex-1 min-w-0 px-2 sm:px-4 py-2.5 text-sm font-medium transition-all relative",
             viewTab === "all"
               ? "text-primary border-b-2 border-primary bg-primary/5"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
           )}
         >
           All
-          <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/30">
+          <span className="ml-1.5 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full border border-primary/30">
             {tasks.length}
           </span>
         </button>
@@ -672,42 +672,42 @@ export const MobileTasksManager = ({
             <button
               onClick={() => setProjectViewTab("active")}
               className={cn(
-                "flex-1 px-4 py-2.5 text-sm font-medium transition-all relative",
+                "flex-1 min-w-0 px-2 sm:px-4 py-2.5 text-sm font-medium transition-all relative",
                 projectViewTab === "active"
                   ? "text-primary border-b-2 border-primary bg-primary/5"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
               )}
             >
               Active
-              <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/30">
+              <span className="ml-1.5 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full border border-primary/30">
                 {activeProjectCount}
               </span>
             </button>
             <button
               onClick={() => setProjectViewTab("done")}
               className={cn(
-                "flex-1 px-4 py-2.5 text-sm font-medium transition-all relative",
+                "flex-1 min-w-0 px-2 sm:px-4 py-2.5 text-sm font-medium transition-all relative",
                 projectViewTab === "done"
                   ? "text-primary border-b-2 border-primary bg-primary/5"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
               )}
             >
               Done
-              <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/30">
+              <span className="ml-1.5 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full border border-primary/30">
                 {doneProjectCount}
               </span>
             </button>
             <button
               onClick={() => setProjectViewTab("all")}
               className={cn(
-                "flex-1 px-4 py-2.5 text-sm font-medium transition-all relative",
+                "flex-1 min-w-0 px-2 sm:px-4 py-2.5 text-sm font-medium transition-all relative",
                 projectViewTab === "all"
                   ? "text-primary border-b-2 border-primary bg-primary/5"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
               )}
             >
               All
-              <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/30">
+              <span className="ml-1.5 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full border border-primary/30">
                 {projects.length}
               </span>
             </button>

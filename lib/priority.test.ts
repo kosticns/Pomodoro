@@ -3,6 +3,7 @@ import {
   DEFAULT_PRIORITY,
   PRIORITIES,
   compareByPriority,
+  compareByProjectThenTask,
   groupByPriority,
   priorityOf,
   priorityRank,
@@ -127,5 +128,84 @@ describe("groupByPriority", () => {
   it("files unset projects under Medium", () => {
     const groups = groupByPriority([project({ id: "unset" })])
     expect(groups[0].priority).toBe("Medium")
+  })
+})
+
+describe("compareByProjectThenTask", () => {
+  const projects = [
+    { id: "urgentProj", priority: "Urgent" as Priority },
+    { id: "lowProj", priority: "Low" as Priority },
+    { id: "unsetProj" },
+  ]
+  const t = (id: string, projectId: string, priority?: Priority, seen = 0) =>
+    ({ id, projectId, priority, lastInteractionTime: seen })
+
+  it("ranks by project first, so a Low task in an Urgent project beats an Urgent task in a Low project", () => {
+    // This is the rule: the project decides what matters today, the task only
+    // decides the order within it.
+    const low = t("lowTaskUrgentProj", "urgentProj", "Low")
+    const urgent = t("urgentTaskLowProj", "lowProj", "Urgent")
+    expect([urgent, low].sort((a, b) => compareByProjectThenTask(a, b, projects))[0].id).toBe(
+      "lowTaskUrgentProj",
+    )
+  })
+
+  it("ranks by task priority inside the same project", () => {
+    const list = [
+      t("medium", "urgentProj", "Medium"),
+      t("urgent", "urgentProj", "Urgent"),
+      t("low", "urgentProj", "Low"),
+      t("high", "urgentProj", "High"),
+    ]
+    expect(list.sort((a, b) => compareByProjectThenTask(a, b, projects)).map((x) => x.id)).toEqual([
+      "urgent",
+      "high",
+      "medium",
+      "low",
+    ])
+  })
+
+  it("groups every task of a higher project above every task of a lower one", () => {
+    const list = [
+      t("lowProjUrgent", "lowProj", "Urgent"),
+      t("urgentProjLow", "urgentProj", "Low"),
+      t("lowProjHigh", "lowProj", "High"),
+      t("urgentProjMedium", "urgentProj", "Medium"),
+    ]
+    const order = list.sort((a, b) => compareByProjectThenTask(a, b, projects)).map((x) => x.id)
+    expect(order.slice(0, 2).every((id) => id.startsWith("urgentProj"))).toBe(true)
+    expect(order.slice(2).every((id) => id.startsWith("lowProj"))).toBe(true)
+  })
+
+  it("breaks a full tie on recent activity", () => {
+    const list = [
+      t("stale", "urgentProj", "High", 100),
+      t("fresh", "urgentProj", "High", 900),
+    ]
+    expect(list.sort((a, b) => compareByProjectThenTask(a, b, projects)).map((x) => x.id)).toEqual([
+      "fresh",
+      "stale",
+    ])
+  })
+
+  it("treats an unset project priority as Medium rather than winning or crashing", () => {
+    const list = [t("inUnset", "unsetProj"), t("inLow", "lowProj"), t("inUrgent", "urgentProj")]
+    expect(list.sort((a, b) => compareByProjectThenTask(a, b, projects)).map((x) => x.id)).toEqual([
+      "inUrgent",
+      "inUnset",
+      "inLow",
+    ])
+  })
+
+  it("does not crash on a task whose project is missing", () => {
+    const orphan = t("orphan", "goneProj", "Urgent")
+    const normal = t("normal", "urgentProj", "Low")
+    expect(() =>
+      [orphan, normal].sort((a, b) => compareByProjectThenTask(a, b, projects)),
+    ).not.toThrow()
+    // The orphan sorts as Medium, so the Urgent project still wins.
+    expect([orphan, normal].sort((a, b) => compareByProjectThenTask(a, b, projects))[0].id).toBe(
+      "normal",
+    )
   })
 })

@@ -39,6 +39,10 @@ export interface Task {
   completedPomodoros: number
   status: TaskStatus
   lastInteractionTime?: number // Timestamp of last interaction
+  // Ranks this task against others IN THE SAME PROJECT only. Across projects
+  // the project's own priority decides first; see compareByProjectThenTask.
+  // Optional for the same reason Project.priority is; resolve with priorityOf.
+  priority?: Priority
 }
 export interface Settings {
   focusDuration: number

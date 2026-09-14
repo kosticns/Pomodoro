@@ -1,4 +1,5 @@
-import type { Project, ProjectStatus, Task, TaskStatus } from "./types"
+import type { Priority, Project, ProjectStatus, Task, TaskStatus } from "./types"
+import { compareByProjectThenTask, priorityRank } from "./priority"
 
 /**
  * The start-of-day prioritisation wizard, for tasks and for projects.
@@ -39,10 +40,26 @@ export interface DayPlanState {
   decisions: Decisions
   /** Set once the user picks the item to start. */
   chosenTaskId: string | null
+  /**
+   * Each item asks two questions: its state, then its priority. This holds the
+   * state answer while the priority question is on screen. Null means the
+   * state question is the one showing.
+   */
+  pendingDecision: TriageDecision | null
 }
 
 export function initialDayPlanState(): DayPlanState {
-  return { index: 0, decisions: {}, chosenTaskId: null }
+  return { index: 0, decisions: {}, chosenTaskId: null, pendingDecision: null }
+}
+
+/** Answers the state question, which reveals the priority question. */
+export function beginDecision(state: DayPlanState, decision: TriageDecision): DayPlanState {
+  return { ...state, pendingDecision: decision }
+}
+
+/** Which of the two questions is on screen for the current item. */
+export function triageStep(state: DayPlanState): "state" | "priority" {
+  return state.pendingDecision ? "priority" : "state"
 }
 
 /**
@@ -157,9 +174,46 @@ export function cascadeProjectDecisionToTasks(
   return tasks
 }
 
-/** The unfinished tasks inside a project, most recently touched first. */
+/**
+ * The unfinished tasks inside a project, highest priority first.
+ *
+ * Within one project the project's own priority is constant, so only the task
+ * priority separates them.
+ */
 export function tasksForProject(tasks: Task[], projectId: string): Task[] {
-  return triageQueueOf(tasks.filter((t) => t.projectId === projectId))
+  return tasks
+    .filter((t) => t.projectId === projectId && t.status !== "Done")
+    .slice()
+    .sort((a, b) => {
+      const byPriority = priorityRank(a.priority) - priorityRank(b.priority)
+      if (byPriority !== 0) return byPriority
+      return (b.lastInteractionTime || 0) - (a.lastInteractionTime || 0)
+    })
+}
+
+/** Sets a priority on one task. */
+export function applyTaskPriority(tasks: Task[], taskId: string, priority: Priority): Task[] {
+  return tasks.map((t) => (t.id === taskId ? { ...t, priority } : t))
+}
+
+/** Sets a priority on one project. */
+export function applyProjectPriority(
+  projects: Project[],
+  projectId: string,
+  priority: Priority,
+): Project[] {
+  return projects.map((p) => (p.id === projectId ? { ...p, priority } : p))
+}
+
+/**
+ * The order tasks are offered in when picking what to start.
+ *
+ * Project priority decides first, task priority second, exactly as the ranking
+ * rule says. A queue that ignored this would offer you an Urgent task from a
+ * Low project ahead of the work you said matters most today.
+ */
+export function orderTasksForPicking(tasks: Task[], projects: Project[]): Task[] {
+  return tasks.slice().sort((a, b) => compareByProjectThenTask(a, b, projects))
 }
 
 /** Should the project wizard run at all? */
@@ -167,7 +221,7 @@ export function shouldRunProjectPlan(projects: Project[]): boolean {
   return projectTriageQueue(projects).length > 0
 }
 
-/** Advances past the current task, recording what was decided. */
+/** Advances past the current item, recording what was decided. */
 export function recordDecision(
   state: DayPlanState,
   taskId: string,
@@ -177,12 +231,25 @@ export function recordDecision(
     ...state,
     index: state.index + 1,
     decisions: { ...state.decisions, [taskId]: decision },
+    pendingDecision: null,
   }
 }
 
-/** Steps back one task so a decision can be changed. */
+/**
+ * Back one step, not one item.
+ *
+ * From the priority question that means returning to the state question for
+ * the same item, so a mistaken tap costs one tap to undo rather than skipping
+ * the item entirely.
+ */
 export function stepBack(state: DayPlanState): DayPlanState {
-  return { ...state, index: Math.max(0, state.index - 1) }
+  if (state.pendingDecision) return { ...state, pendingDecision: null }
+  return { ...state, index: Math.max(0, state.index - 1), pendingDecision: null }
+}
+
+/** True when Back would do anything at all. */
+export function canStepBack(state: DayPlanState): boolean {
+  return state.pendingDecision !== null || state.index > 0
 }
 
 /**

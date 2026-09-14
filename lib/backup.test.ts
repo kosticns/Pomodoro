@@ -41,7 +41,7 @@ describe("buildBackupJSON", () => {
 
   it("declares the current version", () => {
     expect(JSON.parse(buildBackupJSON(payload(), AT)).version).toBe(BACKUP_VERSION)
-    expect(BACKUP_VERSION).toBe("1.3")
+    expect(BACKUP_VERSION).toBe("1.4")
   })
 
   it("carries project priority, so it survives a backup and restore", () => {

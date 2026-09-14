@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Circle,
+  Flag,
   FolderOpen,
   Play,
   SkipForward,
@@ -23,21 +24,37 @@ import { priorityOf } from "@/lib/priority"
 import {
   applyDecision,
   applyProjectDecision,
+  applyProjectPriority,
+  applyTaskPriority,
+  beginDecision,
+  canStepBack,
   candidatesForToday,
   cascadeProjectDecisionToTasks,
   defaultChoice,
   initialDayPlanState,
+  orderTasksForPicking,
   planPhase,
   projectTriageQueue,
   recordDecision,
   stepBack,
   tasksForProject,
   triageQueue,
+  triageStep,
   type DayPlanState,
   type TriageDecision,
 } from "@/lib/day-plan"
+import { PRIORITIES } from "@/lib/priority"
+import type { Priority } from "@/lib/types"
 
 export type DayPlanMode = "tasks" | "projects"
+
+/** Matches the badge colours used on the project cards. */
+const PRIORITY_BUTTON: Record<Priority, string> = {
+  Urgent: "border-red-500/50 text-red-400 hover:bg-red-500/10",
+  High: "border-orange-500/50 text-orange-400 hover:bg-orange-500/10",
+  Medium: "border-muted-foreground/30 text-muted-foreground hover:bg-muted-foreground/10",
+  Low: "border-muted-foreground/25 text-muted-foreground/70 hover:bg-muted-foreground/10",
+}
 
 /**
  * Start-of-day prioritisation, for tasks or for projects.
@@ -98,10 +115,14 @@ export function DayPlanWizard({
 
   const basePhase = planPhase(state, queue.length)
   const current = queue[state.index]
-  const candidates = useMemo(
-    () => candidatesForToday(queue, state.decisions),
-    [queue, state.decisions],
-  )
+  const step = triageStep(state)
+  const candidates = useMemo(() => {
+    const marked = candidatesForToday(queue, state.decisions)
+    // Offer tasks in the order the ranking rule says: project priority first,
+    // task priority second. Projects carry their own priority and keep the
+    // walk order.
+    return mode === "projects" ? marked : orderTasksForPicking(marked as Task[], projects)
+  }, [queue, state.decisions, mode, projects])
 
   /** Tasks inside the chosen project, for the extra projects-mode step. */
   const innerTasks = useMemo(
@@ -125,19 +146,31 @@ export function DayPlanWizard({
     setPickedTaskId((prev) => prev ?? defaultChoice(innerTasks))
   }, [phase, innerTasks])
 
-  const decide = useCallback(
-    (decision: TriageDecision) => {
-      if (!current) return
+  /** First question: what is this item's state for today? */
+  const answerState = useCallback(
+    (decision: TriageDecision) => setState((prev) => beginDecision(prev, decision)),
+    [],
+  )
+
+  /** Second question: how important is it? Applies both and moves on. */
+  const answerPriority = useCallback(
+    (priority: Priority) => {
+      const decision = state.pendingDecision
+      if (!current || !decision) return
       if (mode === "projects") {
-        setProjects((prev) => applyProjectDecision(prev, current.id, decision))
+        setProjects((prev) =>
+          applyProjectPriority(applyProjectDecision(prev, current.id, decision), current.id, priority),
+        )
         // Finishing or parking a project has to reach the work inside it.
         setTasks((prev) => cascadeProjectDecisionToTasks(prev, current.id, decision))
       } else {
-        setTasks((prev) => applyDecision(prev, current.id, decision))
+        setTasks((prev) =>
+          applyTaskPriority(applyDecision(prev, current.id, decision), current.id, priority),
+        )
       }
       setState((prev) => recordDecision(prev, current.id, decision))
     },
-    [current, mode, setTasks, setProjects],
+    [current, mode, state.pendingDecision, setTasks, setProjects],
   )
 
   const projectNameOf = (id: string) => projects.find((p) => p.id === id)?.name
@@ -237,53 +270,90 @@ export function DayPlanWizard({
                 </Badge>
               </div>
 
-              <DialogDescription className="text-sm text-muted-foreground mb-4">
-                Is this {noun} for today?
-              </DialogDescription>
+              {step === "state" ? (
+                <>
+                  <DialogDescription className="text-sm text-muted-foreground mb-4">
+                    Is this {noun} for today?
+                  </DialogDescription>
 
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => decide("today")}
-                  className="h-14 flex flex-col items-center gap-1 border-cyan-500/30 hover:bg-cyan-500/10"
-                >
-                  <Play className="h-5 w-5 text-cyan-400" />
-                  <span className="text-xs">Today</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => decide("later")}
-                  className="h-14 flex flex-col items-center gap-1 border-muted-foreground/30 hover:bg-muted-foreground/10"
-                >
-                  <Circle className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-xs">Later</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => decide("done")}
-                  className="h-14 flex flex-col items-center gap-1 border-emerald-500/30 hover:bg-emerald-500/10"
-                >
-                  <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                  <span className="text-xs">Done</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => decide("skip")}
-                  className="h-14 flex flex-col items-center gap-1 border-yellow-500/30 hover:bg-yellow-500/10"
-                >
-                  <SkipForward className="h-5 w-5 text-yellow-400" />
-                  <span className="text-xs">Skip</span>
-                </Button>
-              </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => answerState("today")}
+                      className="h-14 flex flex-col items-center gap-1 border-cyan-500/30 hover:bg-cyan-500/10"
+                    >
+                      <Play className="h-5 w-5 text-cyan-400" />
+                      <span className="text-xs">Today</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => answerState("later")}
+                      className="h-14 flex flex-col items-center gap-1 border-muted-foreground/30 hover:bg-muted-foreground/10"
+                    >
+                      <Circle className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-xs">Later</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => answerState("done")}
+                      className="h-14 flex flex-col items-center gap-1 border-emerald-500/30 hover:bg-emerald-500/10"
+                    >
+                      <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                      <span className="text-xs">Done</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => answerState("skip")}
+                      className="h-14 flex flex-col items-center gap-1 border-yellow-500/30 hover:bg-yellow-500/10"
+                    >
+                      <SkipForward className="h-5 w-5 text-yellow-400" />
+                      <span className="text-xs">Skip</span>
+                    </Button>
+                  </div>
 
-              {isProjects ? (
-                <p className="mt-3 text-xs text-muted-foreground">
-                  Finishing a project finishes its tasks. Parking one parks the work in progress
-                  inside it.
-                </p>
-              ) : null}
+                  {isProjects ? (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      Finishing a project finishes its tasks. Parking one parks the work in progress
+                      inside it.
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <DialogDescription className="text-sm text-muted-foreground mb-4">
+                    How important is it
+                    {isProjects ? "?" : " inside this project?"}
+                  </DialogDescription>
 
-              {state.index > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {PRIORITIES.map((priority) => (
+                      <Button
+                        key={priority}
+                        variant="outline"
+                        onClick={() => answerPriority(priority)}
+                        className={cn(
+                          "h-14 flex flex-col items-center gap-1",
+                          PRIORITY_BUTTON[priority],
+                          // The level it already sits at, so repeating a daily
+                          // is a confirmation rather than a fresh guess.
+                          priorityOf(current) === priority && "ring-1 ring-primary",
+                        )}
+                      >
+                        <Flag className="h-5 w-5" />
+                        <span className="text-xs">{priority}</span>
+                      </Button>
+                    ))}
+                  </div>
+
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    {isProjects
+                      ? "Project priority ranks the work first. A task's own priority only orders it inside its project."
+                      : "Ranks this task against others in the same project. The project's priority decides first."}
+                  </p>
+                </>
+              )}
+
+              {canStepBack(state) ? (
                 <Button
                   variant="ghost"
                   onClick={() => setState(stepBack)}
