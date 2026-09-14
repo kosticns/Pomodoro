@@ -90,6 +90,13 @@ export interface TimerState {
   timestamp: number
   sessionStartTime: number | null
   sessionEndTime: number | null
+  // Local date the state was saved on, so a new day can discard it and open on
+  // a focus session. `timestamp` was already here and nothing ever read it, so
+  // the app resumed whatever session yesterday ended on. A focus session always
+  // ends INTO a break, which is why mornings opened on a break. Optional:
+  // everything saved before this carries no date and reads as stale, which is
+  // the correct answer for it anyway.
+  date?: string
 }
 export interface WorkdayTimer {
   startTime: number | null

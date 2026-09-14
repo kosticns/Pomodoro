@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { getLocalDateStr } from "@/lib/app-utils"
+import { nextSession } from "@/lib/session-cycle"
 import { useWorkdayTimer } from "@/hooks/use-workday-timer"
 import { CustomPieChart } from "@/components/charts/custom-pie-chart"
 import type { SessionType, Project, Task, Settings, DailyStat } from "@/lib/types"
@@ -101,13 +102,11 @@ export const DesktopDashboard = ({
     longBreak: "Long Break",
   }
 
-  const getNextSessionLabel = () => {
-    if (sessionType === "focus") {
-      const nextCycleCount = cycleCount + 1
-      return nextCycleCount % settings.cyclesBeforeLongBreak === 0 ? "Long Break" : "Short Break"
-    }
-    return "Focus Time"
-  }
+  const getNextSessionLabel = () =>
+    sessionLabels[
+      nextSession({ sessionType, completedFocusSessions: cycleCount }, settings.cyclesBeforeLongBreak)
+        .sessionType
+    ]
 
   // Generate session timeline data
   const generateSessionTimeline = () => {
@@ -145,8 +144,13 @@ export const DesktopDashboard = ({
 
       if (currentMinutes >= totalWorkMinutes) break
 
-      // Add break session
-      const isLongBreak = (currentCycle + 1) % settings.cyclesBeforeLongBreak === 0
+      // Add break session. Asks the same rule the live timer uses, so the
+      // projected day matches the day you actually get.
+      const isLongBreak =
+        nextSession(
+          { sessionType: "focus", completedFocusSessions: currentCycle },
+          settings.cyclesBeforeLongBreak,
+        ).sessionType === "longBreak"
       const breakDuration = (isLongBreak ? settings.longBreakDuration : settings.shortBreakDuration) * 60
 
       if (currentMinutes + breakDuration > totalWorkMinutes && currentMinutes < totalWorkMinutes) {

@@ -82,6 +82,7 @@ import { recordPostureHeld } from "@/lib/daily-stat"
 import { standingCadenceOf, shouldRemindPosture } from "@/lib/posture"
 import { shouldPromptNewDay, localHour, DEFAULT_DAY_START_HOUR, greeting } from "@/lib/day-start"
 import { shouldRunDayPlan } from "@/lib/day-plan"
+import { nextSession, startOfCycle, isStaleTimerState } from "@/lib/session-cycle"
 import { buildBackupJSON, buildBackupCSV, backupFilename } from "@/lib/backup"
 import { AppStateProvider, useAppState } from "@/lib/app-state"
 import { useLocalStorage } from "@/hooks/use-local-storage"
@@ -440,29 +441,19 @@ const skipSession = useCallback(() => {
       }
     }
 
-    if (sessionType === "focus") {
-      // After focus, MUST transition to a break
-      // No consecutive focus sessions allowed
-      setSessionType("shortBreak")
-      setTime(durations.shortBreak)
-    } else if (sessionType === "shortBreak") {
-      // After short break, check if it's time for long break or back to focus
-      if (cycleCount + 1 >= settings.cyclesBeforeLongBreak) {
-        // After completing the cycle, go to long break instead of focus
-        setSessionType("longBreak")
-        setTime(durations.longBreak)
-      } else {
-        // After short break, MUST go back to focus
-        setSessionType("focus")
-        setTime(durations.focus)
-        setCycleCount(cycleCount + 1)
-      }
-    } else {
-      // After long break, MUST go back to focus and reset cycle
-      setSessionType("focus")
-      setTime(durations.focus)
-      setCycleCount(0)
-    }
+    // Skipping picks the next session by exactly the same rule as finishing
+    // one. This used to be a second implementation that counted short breaks
+    // instead of focus sessions, so a skipped break advanced the counter twice
+    // and a long break turned up after two pomodoros rather than four. It also
+    // sent a short break straight into a long break with no focus between.
+    const next = nextSession(
+      { sessionType, completedFocusSessions: cycleCount },
+      settings.cyclesBeforeLongBreak,
+    )
+    setSessionType(next.sessionType)
+    setTime(durations[next.sessionType])
+    setCycleCount(next.completedFocusSessions)
+
     setIsActive(false)
     setSessionStartTime(null)
     setSessionEndTime(null)
@@ -519,33 +510,25 @@ const skipSession = useCallback(() => {
     // Track the completed session type before transitioning
     setLastCompletedSessionType(sessionType)
 
+    const next = nextSession(
+      { sessionType, completedFocusSessions: cycleCount },
+      settings.cyclesBeforeLongBreak,
+    )
+
     if (sessionType === "focus") {
-      // RULE: After focus, MUST transition to a break
-      // No consecutive focus sessions allowed
       onSessionComplete(activeTask)
       playSound(settings.focusEndSound, settings)
-      const newCycleCount = cycleCount + 1
-      setCycleCount(newCycleCount)
-
-      if (newCycleCount % settings.cyclesBeforeLongBreak === 0) {
-        // Time for long break after completing the cycle
-        setSessionType("longBreak")
-        setTime(durations.longBreak)
-        showNotification("Focus complete!", { body: "Time for a long break." })
-      } else {
-        // Time for short break
-        setSessionType("shortBreak")
-        setTime(durations.shortBreak)
-        showNotification("Focus complete!", { body: "Time for a short break." })
-      }
+      showNotification("Focus complete!", {
+        body: next.sessionType === "longBreak" ? "Time for a long break." : "Time for a short break.",
+      })
     } else {
-      // RULE: After any break (short or long), MUST transition to focus
-      // No consecutive breaks allowed
       playSound(settings.breakEndSound, settings)
-      setSessionType("focus")
-      setTime(durations.focus)
       showNotification("Break's over!", { body: "Time to get back to focus." })
     }
+
+    setSessionType(next.sessionType)
+    setTime(durations[next.sessionType])
+    setCycleCount(next.completedFocusSessions)
 
     setSessionStartTime(null)
     setSessionEndTime(null)
@@ -657,6 +640,7 @@ const skipSession = useCallback(() => {
         sessionType,
         cycleCount,
         timestamp: Date.now(),
+        date: getLocalDateStr(),
         sessionStartTime,
         sessionEndTime,
       }
@@ -669,7 +653,20 @@ const skipSession = useCallback(() => {
       if (savedStateRaw) {
         const savedState = JSON.parse(savedStateRaw) as TimerState
 
-        if (savedState.isActive && savedState.sessionEndTime) {
+        // A timer saved on an earlier day is thrown away rather than resumed.
+        // Without this the morning opened on whatever session yesterday ended
+        // on, which is nearly always a break, and the long-break cadence
+        // carried over from yesterday's count.
+        if (isStaleTimerState(savedState.date ?? "", getLocalDateStr())) {
+          const fresh = startOfCycle()
+          setSessionType(fresh.sessionType)
+          setCycleCount(fresh.completedFocusSessions)
+          setTime(durations[fresh.sessionType])
+          setIsActive(false)
+          setSessionStartTime(null)
+          setSessionEndTime(null)
+          localStorage.removeItem("timerState")
+        } else if (savedState.isActive && savedState.sessionEndTime) {
           const now = Date.now()
           const remainingTime = Math.max(0, Math.ceil((savedState.sessionEndTime - now) / 1000))
 

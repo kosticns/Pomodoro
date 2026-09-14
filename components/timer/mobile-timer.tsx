@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils"
 import { BREAK_ACTIVITIES, LONG_BREAK_ACTIVITIES } from "@/lib/activities"
 import { getLocalDateStr } from "@/lib/app-utils"
 import { formatClock } from "@/lib/day-start"
+import { nextSession } from "@/lib/session-cycle"
 import { useWorkdayTimer } from "@/hooks/use-workday-timer"
 import type { SessionType, Project, Note, Task, Settings, DailyStat } from "@/lib/types"
 import { MobileTaskSelector } from "@/components/timer/mobile-task-selector"
@@ -157,15 +158,15 @@ export const MobileTimerComponent = ({
   const [initialBreakDuration, setInitialBreakDuration] = useState(0) // Store initial duration for progress bar
   const [showBreakOptionsDialog, setShowBreakOptionsDialog] = useState(false)
   
+  // Asks the same rule the transition itself uses, so the Skip button can
+  // never promise a session different from the one you get. This was a third
+  // hand-written copy of the cadence.
   const getNextSessionLabel = () => {
-    if (sessionType === "focus") {
-      // After focus, next is always a break
-      const nextCycleCount = cycleCount + 1
-      return nextCycleCount % settings.cyclesBeforeLongBreak === 0 ? "Long Break" : "Short Break"
-    } else {
-      // After any break, next is always focus
-      return "Focus Time"
-    }
+    const next = nextSession(
+      { sessionType, completedFocusSessions: cycleCount },
+      settings.cyclesBeforeLongBreak,
+    )
+    return sessionLabels[next.sessionType]
   }
   
   // Start taking accumulated break
