@@ -92,7 +92,12 @@ import {
   upsertDayReview,
 } from "@/lib/day-review"
 import { backupWarning, isBackupUrgent } from "@/lib/backup-freshness"
-import { nextSession, startOfCycle, isStaleTimerState } from "@/lib/session-cycle"
+import {
+  nextSession,
+  startOfCycle,
+  isStaleTimerState,
+  shouldResetSessionForNewDay,
+} from "@/lib/session-cycle"
 import { buildBackupJSON, buildBackupCSV, backupFilename } from "@/lib/backup"
 import { AppStateProvider, useAppState } from "@/lib/app-state"
 import { useLocalStorage, useStorageHealth } from "@/hooks/use-local-storage"
@@ -211,6 +216,10 @@ const PomodoroApp = () => {
     // above is deliberately NOT set on skip.
     setLastPromptedDate(getLocalDateStr())
     setShowBackupModal(false)
+    // No session reset here: the timer state is declared below this handler,
+    // and the rollover watcher already covers it. A break left running across
+    // midnight cannot survive either, because it hits zero and transitions to
+    // focus on its own long before morning.
     // Then plan the day. Backing up yesterday is the bookkeeping; deciding what
     // to work on is the part that makes the morning useful, so the two run back
     // to back. Skipped entirely when there is no unfinished work, since an
@@ -364,6 +373,9 @@ const PomodoroApp = () => {
   const [time, setTime] = useState(durations.focus)
   const [isActive, setIsActive] = useState(false)
   const [sessionType, setSessionType] = useState<SessionType>("focus")
+  // The calendar day the session on screen belongs to, so a rollover can be
+  // noticed while the app is open. The restore path below only runs on mount.
+  const [sessionDate, setSessionDate] = useState<string>(() => getLocalDateStr())
   const [cycleCount, setCycleCount] = useState(0)
 
   // Add new state variables for tracking the session start time:
@@ -723,6 +735,45 @@ const skipSession = useCallback(() => {
     setTime(durations[sessionType])
   }, [sessionType, durations])
 
+  /**
+   * Put the session back to focus, whatever it was. One place, so the three
+   * callers below cannot drift.
+   */
+  const startFreshCycle = useCallback(() => {
+    const fresh = startOfCycle()
+    setSessionType(fresh.sessionType)
+    setCycleCount(fresh.completedFocusSessions)
+    setTime(durations[fresh.sessionType])
+    setIsActive(false)
+    setSessionStartTime(null)
+    setSessionEndTime(null)
+    setSessionDate(getLocalDateStr())
+  }, [durations])
+
+  // A day can never open on a break.
+  //
+  // The restore path below handles state read from storage, but it runs once,
+  // on mount. An app left open across midnight, which is what a phone PWA
+  // does, never re-ran it, so the morning still showed last night's break. The
+  // workday timer already polls for the rollover; this gives the pomodoro
+  // session the same. A running timer is left alone; see the rule for why.
+  useEffect(() => {
+    const check = () => {
+      if (
+        shouldResetSessionForNewDay({
+          sessionDate,
+          today: getLocalDateStr(),
+          isActive,
+        })
+      ) {
+        startFreshCycle()
+      }
+    }
+    check()
+    const id = setInterval(check, 30_000)
+    return () => clearInterval(id)
+  }, [sessionDate, isActive, startFreshCycle])
+
   // Removed the auto-resume effect as it's now handled within toggleTimer when workday is unpaused.
 
   useEffect(() => {
@@ -751,13 +802,7 @@ const skipSession = useCallback(() => {
         // on, which is nearly always a break, and the long-break cadence
         // carried over from yesterday's count.
         if (isStaleTimerState(savedState.date ?? "", getLocalDateStr())) {
-          const fresh = startOfCycle()
-          setSessionType(fresh.sessionType)
-          setCycleCount(fresh.completedFocusSessions)
-          setTime(durations[fresh.sessionType])
-          setIsActive(false)
-          setSessionStartTime(null)
-          setSessionEndTime(null)
+          startFreshCycle()
           localStorage.removeItem("timerState")
         } else if (savedState.isActive && savedState.sessionEndTime) {
           const now = Date.now()
@@ -766,6 +811,7 @@ const skipSession = useCallback(() => {
           if (remainingTime > 0) {
             setTime(remainingTime)
             setSessionType(savedState.sessionType)
+            setSessionDate(savedState.date ?? getLocalDateStr())
             setCycleCount(savedState.cycleCount)
             setSessionStartTime(savedState.sessionStartTime)
             setSessionEndTime(savedState.sessionEndTime)

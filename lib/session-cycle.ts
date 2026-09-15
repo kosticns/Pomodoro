@@ -98,3 +98,27 @@ export function isStaleTimerState(savedDate: string, today: string): boolean {
   if (!savedDate) return true
   return savedDate !== today
 }
+
+/**
+ * Should the live session be thrown back to focus because the day rolled over?
+ *
+ * `isStaleTimerState` only covers state read from storage, and that read
+ * happens once, on mount. An app left open across midnight, which is exactly
+ * what a phone PWA does, never re-runs it: the session stays on whatever it
+ * was last night, and a session nearly always ends on a break. The workday
+ * timer already polls for the rollover; the pomodoro session did not.
+ *
+ * A running timer is never interrupted. Working past midnight is legitimate,
+ * and yanking a session out from under someone mid-count is worse than the
+ * problem being fixed. The reset lands the moment it next goes idle, and the
+ * start-of-day prompt forces it regardless.
+ */
+export function shouldResetSessionForNewDay(args: {
+  sessionDate: string
+  today: string
+  isActive: boolean
+}): boolean {
+  if (!args.today || !args.sessionDate) return false
+  if (args.sessionDate === args.today) return false
+  return !args.isActive
+}

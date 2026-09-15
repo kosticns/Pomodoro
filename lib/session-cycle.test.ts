@@ -4,6 +4,7 @@ import {
   cyclesBeforeLongBreakOf,
   isStaleTimerState,
   nextSession,
+  shouldResetSessionForNewDay,
   startOfCycle,
   type CycleState,
 } from "./session-cycle"
@@ -164,5 +165,63 @@ describe("isStaleTimerState", () => {
 
   it("does nothing without today's date rather than guessing", () => {
     expect(isStaleTimerState("2026-09-13", "")).toBe(false)
+  })
+})
+
+describe("shouldResetSessionForNewDay", () => {
+  const base = { sessionDate: "2026-09-14", today: "2026-09-15", isActive: false }
+
+  it("resets an idle session left over from yesterday", () => {
+    // The case Mickey hit: app open across midnight, still showing last
+    // night's break.
+    expect(shouldResetSessionForNewDay(base)).toBe(true)
+  })
+
+  it("leaves today's session alone", () => {
+    expect(shouldResetSessionForNewDay({ ...base, today: "2026-09-14" })).toBe(false)
+  })
+
+  it("never interrupts a running timer", () => {
+    // Working past midnight is legitimate. Yanking the session mid-count is
+    // worse than the problem being fixed; it lands when it next goes idle.
+    expect(shouldResetSessionForNewDay({ ...base, isActive: true })).toBe(false)
+  })
+
+  it("resets once that running session finally stops", () => {
+    const running = { ...base, isActive: true }
+    expect(shouldResetSessionForNewDay(running)).toBe(false)
+    expect(shouldResetSessionForNewDay({ ...running, isActive: false })).toBe(true)
+  })
+
+  it("does nothing without a date rather than guessing", () => {
+    expect(shouldResetSessionForNewDay({ ...base, today: "" })).toBe(false)
+    expect(shouldResetSessionForNewDay({ ...base, sessionDate: "" })).toBe(false)
+  })
+
+  it("resets across a month boundary, not just a day", () => {
+    expect(
+      shouldResetSessionForNewDay({ sessionDate: "2026-08-31", today: "2026-09-01", isActive: false }),
+    ).toBe(true)
+  })
+
+  it("resets after several days away", () => {
+    expect(
+      shouldResetSessionForNewDay({ sessionDate: "2026-09-01", today: "2026-09-15", isActive: false }),
+    ).toBe(true)
+  })
+})
+
+describe("a day can never open on a break", () => {
+  it("startOfCycle is always focus, whatever yesterday ended on", () => {
+    // Belt and braces: three separate paths call this, and every one of them
+    // must land on focus.
+    expect(startOfCycle().sessionType).toBe("focus")
+  })
+
+  it("a fresh cycle after a long break is still focus", () => {
+    let state = startOfCycle()
+    for (let i = 0; i < 7; i++) state = nextSession(state, 4)
+    expect(state.sessionType).toBe("longBreak")
+    expect(startOfCycle().sessionType).toBe("focus")
   })
 })
