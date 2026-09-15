@@ -3,24 +3,28 @@
 import { useEffect } from "react"
 
 /**
- * Registers the generated service worker.
+ * Registers /sw.js.
  *
- * Deliberately quiet: offline support is not something the user asked for and
- * should not announce itself. A registration failure is logged and otherwise
- * ignored, because the app works perfectly well online without it.
+ * That file is currently a KILL SWITCH, not a caching worker. Registration is
+ * kept precisely so it keeps reaching devices: a browser re-checks the worker
+ * script on navigation, so anything still stuck on the caching worker that
+ * broke the app on 14 Sep 2026 picks this up and repairs itself.
  *
- * Only runs in production. In `pnpm dev` there is no out/sw.js to register,
- * and a stale worker caching a dev build is a genuinely confusing bug.
+ * Do not delete this registration until that worker is certainly gone from
+ * every device. Serving no sw.js at all does not reliably unregister an
+ * existing one; serving a worker that unregisters itself does.
+ *
+ * See scripts/build-sw.mjs for what went wrong and what a safe re-introduction
+ * of offline support would have to do differently.
  */
 export function useServiceWorker() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return
 
-    // After load, so registration never competes with the first paint.
     const register = () => {
       navigator.serviceWorker.register("/sw.js").catch((error) => {
-        console.warn("Service worker registration failed; the app still works online.", error)
+        console.warn("Service worker registration failed.", error)
       })
     }
 

@@ -31,10 +31,14 @@ pnpm test          # unit tests on the break/well-being maths
 pnpm typecheck     # tsc; the build enforces this too, but fail early and clearly
 pnpm build
 [ -f out/index.html ] || fail "out/index.html missing, build did not export"
-# The service worker is generated from this build's hashed filenames, so a
-# missing or stale one would cache 404s for every asset.
+# sw.js is currently a kill switch that unregisters the caching worker which
+# broke the app on 14 Sep 2026. It must keep shipping so stuck devices repair
+# themselves, and it must NOT precache anything.
 [ -f out/sw.js ] || fail "out/sw.js missing, scripts/build-sw.mjs did not run"
-grep -q '"/index.html"' out/sw.js || fail "out/sw.js does not precache the shell"
+grep -q 'registration.unregister' out/sw.js || fail "out/sw.js is not the kill switch"
+if grep -q 'addEventListener("fetch"' out/sw.js; then
+  fail "out/sw.js must not intercept fetches"
+fi
 
 # The manifest promises these. Shipping without them gives a blank home-screen icon.
 for icon in icon-192x192.png icon-512x512.png; do
