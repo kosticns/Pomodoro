@@ -24,8 +24,16 @@ import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { BREAK_ACTIVITIES, LONG_BREAK_ACTIVITIES } from "@/lib/activities"
-import { getLocalDateStr } from "@/lib/app-utils"
+import { getLocalDateStr, playSound } from "@/lib/app-utils"
 import { formatClock } from "@/lib/day-start"
+import {
+  startSavedBreak,
+  remainingSeconds,
+  savedBreakProgress,
+  isSavedBreakComplete,
+  type SavedBreak,
+} from "@/lib/saved-break"
+import { useLocalStorage } from "@/hooks/use-local-storage"
 import { nextSession } from "@/lib/session-cycle"
 import { useWorkdayTimer } from "@/hooks/use-workday-timer"
 import type { SessionType, Project, Note, Task, Settings, DailyStat } from "@/lib/types"
@@ -152,10 +160,20 @@ export const MobileTimerComponent = ({
   const pomodorosWithoutBreak = Math.max(0, todayPomodoros - todayBreaksTaken - 1)
   const accumulatedBreakTime = todayStat?.accumulatedBreakTime || 0
   
-  // State for taking accumulated break
-  const [isTakingAccumulatedBreak, setIsTakingAccumulatedBreak] = useState(false)
-  const [accumulatedBreakTimer, setAccumulatedBreakTimer] = useState(0)
-  const [initialBreakDuration, setInitialBreakDuration] = useState(0) // Store initial duration for progress bar
+  // The banked break, stored as an end timestamp and persisted.
+  //
+  // It used to be a number decremented on a one-second interval, held in
+  // component state. That meant the break paused whenever the machine slept or
+  // the tab was throttled, and vanished entirely on reload. Every other timer
+  // here reconstructs from a timestamp; this one now does too.
+  const [savedBreak, setSavedBreak] = useLocalStorage<SavedBreak | null>("savedBreak", null)
+  // Ticks only to re-render. The remaining time is derived from the clock, so
+  // a missed tick costs nothing.
+  const [nowTick, setNowTick] = useState(() => Date.now())
+
+  const isTakingAccumulatedBreak = savedBreak !== null
+  const accumulatedBreakTimer = remainingSeconds(savedBreak, nowTick)
+  const breakProgress = savedBreakProgress(savedBreak, nowTick)
   const [showBreakOptionsDialog, setShowBreakOptionsDialog] = useState(false)
   
   // Asks the same rule the transition itself uses, so the Skip button can
@@ -175,10 +193,7 @@ export const MobileTimerComponent = ({
       const breakMinutes = accumulatedBreakTime
       const breakSeconds = breakMinutes * 60
       
-      // Set states for break timer
-      setInitialBreakDuration(breakSeconds) // Store for progress bar
-      setAccumulatedBreakTimer(breakSeconds)
-      setIsTakingAccumulatedBreak(true)
+      setSavedBreak(startSavedBreak(breakMinutes, Date.now()))
       setShowBreakOptionsDialog(false)
       
       // Clear accumulated break time from stats
@@ -209,37 +224,31 @@ export const MobileTimerComponent = ({
     }
   }
   
-  // Effect to count down accumulated break timer
+  // Drive the display. The interval only forces a re-render; it does not hold
+  // the value, so a tick missed while asleep changes nothing.
+  //
+  // The old version listed the countdown itself as a dependency, which tore
+  // down and rebuilt the interval every single second.
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null
-    if (isTakingAccumulatedBreak && accumulatedBreakTimer > 0) {
-      interval = setInterval(() => {
-        setAccumulatedBreakTimer((prev) => {
-          if (prev <= 1) {
-            setIsTakingAccumulatedBreak(false)
-            setInitialBreakDuration(0)
-            // Play notification sound
-            if (settings.soundEnabled) {
-              const audio = new Audio(`/sounds/${settings.breakEndSound || "bell"}.mp3`)
-              audio.volume = settings.soundVolume / 100
-              audio.play().catch(() => {})
-            }
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-    }
-    return () => {
-      if (interval) clearInterval(interval)
-    }
-  }, [isTakingAccumulatedBreak, accumulatedBreakTimer, settings])
+    if (!savedBreak) return
+    const id = setInterval(() => setNowTick(Date.now()), 250)
+    return () => clearInterval(id)
+  }, [savedBreak])
+
+  // Finish the break once the clock passes its end, including when that
+  // happened while the machine was asleep or the app was closed.
+  useEffect(() => {
+    if (!savedBreak) return
+    if (!isSavedBreakComplete(savedBreak, nowTick)) return
+    setSavedBreak(null)
+    // playSound, not a hand-rolled Audio element. The old one appended a
+    // second ".mp3" to a filename that already had one, and divided a 0-to-1
+    // volume by 100, so it requested /sounds/chime.mp3.mp3 at 0.5% volume and
+    // the break never made a sound.
+    playSound(settings.breakEndSound, settings)
+  }, [savedBreak, nowTick, settings, setSavedBreak])
   
-  const cancelAccumulatedBreak = () => {
-    setIsTakingAccumulatedBreak(false)
-    setAccumulatedBreakTimer(0)
-    setInitialBreakDuration(0)
-  }
+  const cancelAccumulatedBreak = () => setSavedBreak(null)
 
   return (
     // Tighter vertical rhythm than the original py-6 / space-y-6. Those gaps
@@ -625,7 +634,7 @@ export const MobileTimerComponent = ({
           <div className="w-full bg-black/40 rounded-full h-2 mt-3 overflow-hidden">
             <div
               className="bg-gradient-to-r from-amber-500 to-orange-500 h-full transition-all duration-1000"
-              style={{ width: `${initialBreakDuration > 0 ? ((initialBreakDuration - accumulatedBreakTimer) / initialBreakDuration) * 100 : 0}%` }}
+              style={{ width: `${breakProgress}%` }}
             />
           </div>
         </div>
