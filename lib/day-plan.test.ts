@@ -438,6 +438,7 @@ import {
   applyTaskPriority,
   beginDecision,
   canStepBack,
+  needsPriority,
   orderTasksForPicking,
   triageStep,
 } from "./day-plan"
@@ -563,5 +564,36 @@ describe("orderTasksForPicking", () => {
     const tasks = [task("b", { projectId: "p", priority: "Low" }), task("a", { projectId: "p", priority: "Urgent" })]
     orderTasksForPicking(tasks, projects)
     expect(tasks.map((t) => t.id)).toEqual(["b", "a"])
+  })
+})
+
+describe("needsPriority", () => {
+  it("does not ask a finished item how important it is", () => {
+    // Done is done. Ranking it is a question with no consequence, and it is
+    // the answer given most often at the end of a day.
+    expect(needsPriority("done")).toBe(false)
+  })
+
+  it("still asks for everything that continues to exist", () => {
+    expect(needsPriority("today")).toBe(true)
+    expect(needsPriority("later")).toBe(true)
+    // Skip leaves the item untouched but it is still live, so its rank matters.
+    expect(needsPriority("skip")).toBe(true)
+  })
+})
+
+describe("answering done", () => {
+  it("records and advances in one step, with no priority pending", () => {
+    const state = recordDecision(initialDayPlanState(), "a", "done")
+    expect(state.index).toBe(1)
+    expect(state.decisions).toEqual({ a: "done" })
+    expect(triageStep(state)).toBe("state")
+  })
+
+  it("leaves Back pointing at the previous item, not a priority sub-step", () => {
+    let state = recordDecision(initialDayPlanState(), "a", "done")
+    state = stepBack(state)
+    expect(state.index).toBe(0)
+    expect(triageStep(state)).toBe("state")
   })
 })

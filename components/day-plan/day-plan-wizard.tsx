@@ -33,6 +33,7 @@ import {
   cascadeProjectDecisionToTasks,
   defaultChoice,
   initialDayPlanState,
+  needsPriority,
   orderTasksForPicking,
   planPhase,
   projectTriageQueue,
@@ -183,10 +184,47 @@ export function DayPlanWizard({
     setPickedTaskId((prev) => prev ?? defaultChoice(innerTasks))
   }, [phase, innerTasks])
 
-  /** First question: what is this item's state for today? */
+  /**
+   * Applies a decision to the underlying item. Shared by both answer paths so
+   * a "done" that skips the priority question still writes the same way.
+   */
+  const applyToItem = useCallback(
+    (decision: TriageDecision, priority?: Priority) => {
+      if (!current) return
+      if (mode === "projects") {
+        setProjects((prev) => {
+          const next = applyProjectDecision(prev, current.id, decision)
+          return priority ? applyProjectPriority(next, current.id, priority) : next
+        })
+        // Finishing or parking a project has to reach the work inside it.
+        setTasks((prev) => cascadeProjectDecisionToTasks(prev, current.id, decision))
+      } else {
+        setTasks((prev) => {
+          const next = applyDecision(prev, current.id, decision)
+          return priority ? applyTaskPriority(next, current.id, priority) : next
+        })
+      }
+    },
+    [current, mode, setTasks, setProjects],
+  )
+
+  /**
+   * First question: what is this item's state?
+   *
+   * "done" needs no priority, so it applies and advances in one tap rather
+   * than asking how to rank something that is finished.
+   */
   const answerState = useCallback(
-    (decision: TriageDecision) => setState((prev) => beginDecision(prev, decision)),
-    [],
+    (decision: TriageDecision) => {
+      if (!current) return
+      if (needsPriority(decision)) {
+        setState((prev) => beginDecision(prev, decision))
+        return
+      }
+      applyToItem(decision)
+      setState((prev) => recordDecision(prev, current.id, decision))
+    },
+    [current, applyToItem],
   )
 
   /** Second question: how important is it? Applies both and moves on. */
@@ -194,21 +232,11 @@ export function DayPlanWizard({
     (priority: Priority) => {
       const decision = state.pendingDecision
       if (!current || !decision) return
-      if (mode === "projects") {
-        setProjects((prev) =>
-          applyProjectPriority(applyProjectDecision(prev, current.id, decision), current.id, priority),
-        )
-        // Finishing or parking a project has to reach the work inside it.
-        setTasks((prev) => cascadeProjectDecisionToTasks(prev, current.id, decision))
-      } else {
-        setTasks((prev) =>
-          applyTaskPriority(applyDecision(prev, current.id, decision), current.id, priority),
-        )
-      }
+      applyToItem(decision, priority)
       if (mode === "review") setReviewPriorities((prev) => ({ ...prev, [current.id]: priority }))
       setState((prev) => recordDecision(prev, current.id, decision))
     },
-    [current, mode, state.pendingDecision, setTasks, setProjects],
+    [current, mode, state.pendingDecision, applyToItem],
   )
 
   const reviewAnswered = queue.filter((t) => state.decisions[t.id]).length
@@ -525,9 +553,9 @@ export function DayPlanWizard({
                       </Badge>
                       <Badge
                         variant="outline"
-                        className={cn("text-xs", PRIORITY_BUTTON[reviewPriorities[t.id] ?? "Medium"])}
+                        className={cn("text-xs", PRIORITY_BUTTON[reviewPriorities[t.id] ?? priorityOf(t)])}
                       >
-                        {reviewPriorities[t.id] ?? "Medium"}
+                        {reviewPriorities[t.id] ?? priorityOf(t)}
                       </Badge>
                     </div>
                   </div>

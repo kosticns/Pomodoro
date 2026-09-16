@@ -52,6 +52,20 @@ export function initialDayPlanState(): DayPlanState {
   return { index: 0, decisions: {}, chosenTaskId: null, pendingDecision: null }
 }
 
+/**
+ * Does this answer still need a priority?
+ *
+ * "done" does not. A finished item is finished; ranking it against the others
+ * is a question with no consequence, and asking it costs a tap on the answer
+ * you give most often at the end of a day.
+ *
+ * Callers branch on this: true means show the priority question via
+ * beginDecision, false means go straight to recordDecision.
+ */
+export function needsPriority(decision: TriageDecision): boolean {
+  return decision !== "done"
+}
+
 /** Answers the state question, which reveals the priority question. */
 export function beginDecision(state: DayPlanState, decision: TriageDecision): DayPlanState {
   return { ...state, pendingDecision: decision }

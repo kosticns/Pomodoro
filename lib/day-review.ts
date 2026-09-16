@@ -1,4 +1,5 @@
 import type { DailyStat, Priority, Project, Task, TriageDecisionLike } from "./types"
+import { priorityOf } from "./priority"
 
 /**
  * The end-of-day post mortem.
@@ -114,7 +115,9 @@ export function buildDayReview(args: {
         projectId: t.projectId,
         projectName: projects.find((p) => p.id === t.projectId)?.name ?? "No project",
         decision: decisions[t.id],
-        priority: priorities[t.id] ?? "Medium",
+        // A task answered "done" is never asked for a priority, so fall back
+        // to the one it actually carried rather than inventing Medium.
+        priority: priorities[t.id] ?? priorityOf(t),
         pomodoros: perTask[t.id] ?? 0,
       })),
   }

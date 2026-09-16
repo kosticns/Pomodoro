@@ -198,7 +198,16 @@ describe("buildDayReview", () => {
     expect(r.entries.map((e) => e.taskId)).toEqual(["a"])
   })
 
-  it("falls back to Medium when no priority was captured", () => {
+  it("records a done task's own priority, since it is never asked for one", () => {
+    const withPriority = [task("a", { name: "Rework the nav", priority: "Urgent" })]
+    const r = buildDayReview({
+      date: "2026-09-14", queue: withPriority, decisions: { a: "done" }, priorities: {},
+      projects, stat: stat(), completedAt: MORNING,
+    })
+    expect(r.entries[0].priority).toBe("Urgent")
+  })
+
+  it("falls back to Medium only when the task never had one either", () => {
     const r = buildDayReview({
       date: "2026-09-14", queue, decisions: { a: "done" }, priorities: {},
       projects, stat: stat(), completedAt: MORNING,
