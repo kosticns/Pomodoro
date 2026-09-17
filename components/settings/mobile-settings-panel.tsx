@@ -9,6 +9,7 @@ import {
   stepWorkdayDuration,
   formatWorkdayDuration,
   MAX_WORKDAY_HOURS,
+  elapsedAtProgress,
 } from "@/lib/workday-duration"
 import React, { useState, useRef } from "react"
 import {
@@ -480,9 +481,11 @@ export const MobileSettingsPanel = ({
               <WorkdayTimelineSlider
                 progress={workdayTimer.workdayProgress}
                 onChange={workdayTimer.setWorkdayProgress}
+                durationHours={settings.workdayDuration}
               />
               <p className="text-xs text-muted-foreground">
-                Drag the handle to adjust how much of your workday has elapsed.
+                {elapsedAtProgress(workdayTimer.workdayProgress, settings.workdayDuration)} of{" "}
+                {formatWorkdayDuration(settings.workdayDuration)} elapsed. Drag in 30 minute steps.
               </p>
               <Button
                 onClick={workdayTimer.resetWorkdayTimer}

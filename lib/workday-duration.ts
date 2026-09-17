@@ -50,6 +50,39 @@ export function formatWorkdayDuration(hours: number): string {
   return `${h}h ${m.toString().padStart(2, "0")}m`
 }
 
+/**
+ * One 30-minute step, as a percentage of the workday.
+ *
+ * The elapsed-time slider works in percent, so the step depends on how long
+ * the day is: half an hour is 6.25% of eight hours and 5.88% of eight and a
+ * half. Deriving it keeps the slider honest when the workday length changes.
+ */
+export function stepPercentOfWorkday(hours: number): number {
+  return (WORKDAY_STEP_HOURS / normaliseWorkdayDuration(hours)) * 100
+}
+
+/**
+ * Snap a slider position to the nearest half hour of the workday.
+ *
+ * Dragging landed anywhere, so the elapsed time could be set to 3h 28m. Half
+ * hours are what the rest of the workday moves in, and they are what you can
+ * actually reason about when correcting the timer by hand.
+ */
+export function snapProgressToStep(percent: number, hours: number): number {
+  if (!Number.isFinite(percent)) return 0
+  const step = stepPercentOfWorkday(hours)
+  const snapped = Math.round(percent / step) * step
+  return Math.min(100, Math.max(0, snapped))
+}
+
+/** The elapsed time a slider position represents: "3h 30m". */
+export function elapsedAtProgress(percent: number, hours: number): string {
+  const totalMinutes = Math.round((normaliseWorkdayDuration(hours) * 60 * Math.min(100, Math.max(0, percent))) / 100)
+  const h = Math.floor(totalMinutes / 60)
+  const m = totalMinutes % 60
+  return `${h}h ${m.toString().padStart(2, "0")}m`
+}
+
 /** Spoken form for the completion notification: "8 and a half hour". */
 export function workdayDurationWords(hours: number): string {
   const value = normaliseWorkdayDuration(hours)

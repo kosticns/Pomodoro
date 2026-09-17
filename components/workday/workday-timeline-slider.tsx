@@ -2,13 +2,32 @@
 
 import React, { useState, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
+import {
+  snapProgressToStep,
+  stepPercentOfWorkday,
+  elapsedAtProgress,
+} from "@/lib/workday-duration"
 
+/**
+ * Sets how much of the workday has elapsed.
+ *
+ * Moves in 30-minute steps rather than continuously. Dragging used to land
+ * anywhere, so correcting the timer by hand produced values like 3h 28m, which
+ * is not a number you can reason about. Half hours are what the rest of the
+ * workday moves in.
+ *
+ * The step is a share of the day, so it depends on how long the day is: half
+ * an hour is 6.25% of eight hours and 5.88% of eight and a half. That is why
+ * the duration has to come in as a prop.
+ */
 export const WorkdayTimelineSlider = ({
   progress,
   onChange,
+  durationHours,
 }: {
   progress: number
   onChange: (percent: number) => void
+  durationHours: number
 }) => {
   const trackRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -18,7 +37,7 @@ export const WorkdayTimelineSlider = ({
     if (!track) return
     const rect = track.getBoundingClientRect()
     const percent = ((clientX - rect.left) / rect.width) * 100
-    onChange(Math.min(100, Math.max(0, percent)))
+    onChange(snapProgressToStep(percent, durationHours))
   }
 
   useEffect(() => {
@@ -38,7 +57,7 @@ export const WorkdayTimelineSlider = ({
       window.removeEventListener("touchmove", handleMove)
       window.removeEventListener("touchend", handleUp)
     }
-  }, [isDragging])
+  }, [isDragging, durationHours])
 
   const clampedProgress = Math.min(100, Math.max(0, progress))
 
@@ -59,10 +78,13 @@ export const WorkdayTimelineSlider = ({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(clampedProgress)}
+      aria-valuetext={`${elapsedAtProgress(clampedProgress, durationHours)} elapsed`}
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === "ArrowLeft") onChange(Math.max(0, clampedProgress - 2))
-        if (e.key === "ArrowRight") onChange(Math.min(100, clampedProgress + 2))
+        // One press moves one half hour, matching the drag.
+        const step = stepPercentOfWorkday(durationHours)
+        if (e.key === "ArrowLeft") onChange(snapProgressToStep(clampedProgress - step, durationHours))
+        if (e.key === "ArrowRight") onChange(snapProgressToStep(clampedProgress + step, durationHours))
       }}
     >
       <div className="w-full bg-secondary/30 rounded-full h-2">
