@@ -5,6 +5,7 @@ import type { Settings, WorkdayTimer } from "@/lib/types"
 import { useLocalStorage } from "./use-local-storage"
 import { getLocalDateStr } from "@/lib/app-utils"
 import { isWorkdayForToday } from "@/lib/workday"
+import { workdayDurationWords } from "@/lib/workday-duration"
 
 /**
  * @param onPostureHeld Called when a posture ENDS, with how long it was held.
@@ -196,7 +197,7 @@ export const useWorkdayTimer = (
           // Workday completed - show notification
           if ("Notification" in window && Notification.permission === "granted") {
             new Notification("Workday Complete!", {
-              body: `You've completed your ${settings.workdayDuration}-hour workday. Great job!`,
+              body: `You've completed your ${workdayDurationWords(settings.workdayDuration)} workday. Great job!`,
               icon: "/icon-192x192.png",
             })
           }

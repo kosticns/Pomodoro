@@ -5,6 +5,11 @@ import { standingCadenceOf } from "@/lib/posture"
 import { DEFAULT_DAY_START_HOUR } from "@/lib/day-start"
 import { buildBackupJSON, buildBackupCSV, backupFilename } from "@/lib/backup"
 import { backupWarning, isBackupUrgent } from "@/lib/backup-freshness"
+import {
+  stepWorkdayDuration,
+  formatWorkdayDuration,
+  MAX_WORKDAY_HOURS,
+} from "@/lib/workday-duration"
 import React, { useState, useRef } from "react"
 import {
   Timer,
@@ -18,6 +23,7 @@ import {
   FileSpreadsheet,
   Upload,
   AlertTriangle,
+  Plus,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -360,14 +366,24 @@ export const MobileSettingsPanel = ({
             />
           </div>
   <div className="space-y-1">
-  <Label className="text-xs">Workday (hours)</Label>
-  <Input
-  type="number"
-  min="1"
-  max="12"
-  value={settings.workdayDuration}
-  onChange={(e) => setSettings({ ...settings, workdayDuration: Number(e.target.value) })}
-  />
+  <Label className="text-xs" htmlFor="workday-duration">Workday</Label>
+  {/* Tap to step. A number input could only move in whole hours, which is
+      coarser than a day actually moves. Wraps at the top so a single finger
+      can come back down; see stepWorkdayDuration. */}
+  <Button
+  id="workday-duration"
+  type="button"
+  variant="outline"
+  onClick={() =>
+  setSettings({ ...settings, workdayDuration: stepWorkdayDuration(settings.workdayDuration) })
+  }
+  aria-label={`Workday length ${formatWorkdayDuration(settings.workdayDuration)}, tap to add 30 minutes`}
+  className="w-full h-11 justify-between font-mono text-base tabular-nums border-primary/30 hover:bg-primary/10 hover:border-primary"
+  >
+  <span>{formatWorkdayDuration(settings.workdayDuration)}</span>
+  <Plus className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+  </Button>
+  <p className="text-[10px] text-muted-foreground">Tap for +30m, wraps at {MAX_WORKDAY_HOURS}h</p>
   </div>
   <div className="space-y-1">
   <Label className="text-xs">Daily pomodoro goal</Label>
@@ -482,7 +498,7 @@ export const MobileSettingsPanel = ({
               <p className="text-sm text-muted-foreground mb-3">
                 Workday timer will start automatically when you begin your first focus session of the day.
               </p>
-              <p className="text-xs text-muted-foreground">Duration: {settings.workdayDuration} hours</p>
+              <p className="text-xs text-muted-foreground">Duration: {formatWorkdayDuration(settings.workdayDuration)}</p>
             </div>
           )}
         </CardContent>

@@ -34,6 +34,7 @@ import {
   type SavedBreak,
 } from "@/lib/saved-break"
 import { useLocalStorage } from "@/hooks/use-local-storage"
+import { formatWorkdayDuration } from "@/lib/workday-duration"
 import { nextSession } from "@/lib/session-cycle"
 import { useWorkdayTimer } from "@/hooks/use-workday-timer"
 import type { SessionType, Project, Note, Task, Settings, DailyStat } from "@/lib/types"
@@ -318,7 +319,7 @@ export const MobileTimerComponent = ({
                   <div>
                     <div className="text-sm font-bold text-secondary tracking-wider">Workday Complete!</div>
                     <div className="text-xs text-foreground/60 font-mono">
-                      {settings.workdayDuration}h completed today
+                      {formatWorkdayDuration(settings.workdayDuration)} completed today
                     </div>
                   </div>
                 </div>
@@ -335,7 +336,7 @@ export const MobileTimerComponent = ({
                 <div className="text-right">
                   <div className="text-xs text-foreground/60 tracking-wide mb-1 font-mono">Daily Goal</div>
                   <div className="text-xl font-bold text-primary tabular-nums text-glow-yellow">
-                    {settings.workdayDuration}h 00m
+                    {formatWorkdayDuration(settings.workdayDuration)}
                   </div>
                 </div>
               </div>
